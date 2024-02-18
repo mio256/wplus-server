@@ -1,0 +1,12 @@
+version: '2'
+sql:
+  - schema:
+      - 'db/core.sql'
+    queries: './db/queries/'
+    engine: 'postgresql'
+    gen:
+      go:
+        package: 'rdb'
+        out: 'pkg/infra/rdb'
+        emit_json_tags: true
+        sql_package: "pgx/v5"
