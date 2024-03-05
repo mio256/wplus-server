@@ -18,7 +18,7 @@ func SetupRouter() *gin.Engine {
 	r.POST(OfficePath, handler.PostOffice)
 	r.DELETE(OfficePath+"/:id", handler.DeleteOffice)
 	// workplace
-	// r.GET(WorkplacePath+"/:office_id", handler.GetWorkplaces)
+	r.GET(WorkplacePath+"/:office_id", handler.GetWorkplaces)
 	r.POST(WorkplacePath, handler.PostWorkplace)
 	r.DELETE(WorkplacePath+"/:id", handler.DeleteWorkplace)
 	// employee

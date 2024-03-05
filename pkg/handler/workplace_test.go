@@ -18,6 +18,34 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestGetWorkplaces(t *testing.T) {
+	router := ui.SetupRouter()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	dbConn := infra.ConnectDB(c)
+
+	o := test.CreateOffice(t, c, dbConn, nil)
+	wp := test.CreateWorkplace(t, c, dbConn, func(v *rdb.Workplace) {
+		v.OfficeID = o.ID
+	})
+
+	c.Request, _ = http.NewRequest("GET", fmt.Sprintf("%s/%d", ui.WorkplacePath, o.ID), nil)
+	router.ServeHTTP(w, c.Request)
+
+	assert.Equal(t, 200, w.Code)
+	var res []rdb.Workplace
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &res))
+	assert.NotEmpty(t, res)
+	assert.Equal(t, wp.Name, res[0].Name)
+	assert.Equal(t, wp.OfficeID, res[0].OfficeID)
+	assert.Equal(t, wp.WorkType, res[0].WorkType)
+
+	t.Cleanup(func() {
+		require.NoError(t, rdb.New(dbConn).TestDeleteWorkplace(c, res[0].ID))
+		require.NoError(t, rdb.New(dbConn).TestDeleteOffice(c, o.ID))
+	})
+}
+
 func TestPostWorkplace(t *testing.T) {
 	router := ui.SetupRouter()
 	w := httptest.NewRecorder()
