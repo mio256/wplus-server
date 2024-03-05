@@ -36,6 +36,38 @@ func (q *Queries) CreateWorkplace(ctx context.Context, arg CreateWorkplaceParams
 	return i, err
 }
 
+const getWorkplaces = `-- name: GetWorkplaces :many
+select id, name, office_id, work_type, deleted_at, created_at, updated_at from workplaces where office_id = $1 and deleted_at is null
+`
+
+func (q *Queries) GetWorkplaces(ctx context.Context, officeID int64) ([]Workplace, error) {
+	rows, err := q.db.Query(ctx, getWorkplaces, officeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Workplace
+	for rows.Next() {
+		var i Workplace
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.OfficeID,
+			&i.WorkType,
+			&i.DeletedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const softDeleteWorkplace = `-- name: SoftDeleteWorkplace :exec
 update workplaces set deleted_at = now() where id = $1
 `

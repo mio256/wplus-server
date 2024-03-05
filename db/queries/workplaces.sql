@@ -1,3 +1,6 @@
+-- name: GetWorkplaces :many
+select * from workplaces where office_id = $1 and deleted_at is null;
+
 -- name: CreateWorkplace :one
 insert into workplaces (name, office_id, work_type)
 values ($1, $2, $3)
