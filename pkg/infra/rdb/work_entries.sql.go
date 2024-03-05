@@ -57,6 +57,43 @@ func (q *Queries) CreateWorkEntry(ctx context.Context, arg CreateWorkEntryParams
 	return i, err
 }
 
+const getWorkEntriesByEmployee = `-- name: GetWorkEntriesByEmployee :many
+select id, employee_id, workplace_id, date, hours, start_time, end_time, attendance, comment, deleted_at, created_at, updated_at from work_entries where employee_id = $1 and deleted_at is null
+`
+
+func (q *Queries) GetWorkEntriesByEmployee(ctx context.Context, employeeID int64) ([]WorkEntry, error) {
+	rows, err := q.db.Query(ctx, getWorkEntriesByEmployee, employeeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WorkEntry
+	for rows.Next() {
+		var i WorkEntry
+		if err := rows.Scan(
+			&i.ID,
+			&i.EmployeeID,
+			&i.WorkplaceID,
+			&i.Date,
+			&i.Hours,
+			&i.StartTime,
+			&i.EndTime,
+			&i.Attendance,
+			&i.Comment,
+			&i.DeletedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const softDeleteWorkEntry = `-- name: SoftDeleteWorkEntry :exec
 update work_entries set deleted_at = now() where id = $1
 `
