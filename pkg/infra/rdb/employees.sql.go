@@ -32,6 +32,37 @@ func (q *Queries) CreateEmployee(ctx context.Context, arg CreateEmployeeParams) 
 	return i, err
 }
 
+const getEmployees = `-- name: GetEmployees :many
+select id, name, workplace_id, deleted_at, created_at, updated_at from employees where workplace_id = $1 and deleted_at is null
+`
+
+func (q *Queries) GetEmployees(ctx context.Context, workplaceID int64) ([]Employee, error) {
+	rows, err := q.db.Query(ctx, getEmployees, workplaceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Employee
+	for rows.Next() {
+		var i Employee
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.WorkplaceID,
+			&i.DeletedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const softDeleteEmployee = `-- name: SoftDeleteEmployee :exec
 update employees set deleted_at = now() where id = $1
 `
