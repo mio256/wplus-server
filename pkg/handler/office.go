@@ -10,6 +10,19 @@ import (
 	"github.com/taxio/errors"
 )
 
+func GetOffices(c *gin.Context) {
+	dbConn := infra.ConnectDB(c)
+	repo := rdb.New(dbConn)
+
+	offices, err := repo.AllOffices(c)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, offices)
+}
+
 func PostOffice(c *gin.Context) {
 	dbConn := infra.ConnectDB(c)
 	repo := rdb.New(dbConn)

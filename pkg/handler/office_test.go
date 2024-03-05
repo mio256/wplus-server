@@ -18,6 +18,28 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestGetOffices(t *testing.T) {
+	router := ui.SetupRouter()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	dbConn := infra.ConnectDB(c)
+
+	created := test.CreateOffice(t, c, dbConn, nil)
+
+	c.Request, _ = http.NewRequest("GET", ui.OfficePath, nil)
+	router.ServeHTTP(w, c.Request)
+
+	assert.Equal(t, w.Code, 200)
+	var res []rdb.Office
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &res))
+	assert.NotEmpty(t, res)
+	assert.Equal(t, res[0].Name, created.Name)
+
+	t.Cleanup(func() {
+		require.NoError(t, rdb.New(dbConn).TestDeleteOffice(c, created.ID))
+	})
+}
+
 func TestPostOffice(t *testing.T) {
 	router := ui.SetupRouter()
 	w := httptest.NewRecorder()
