@@ -18,6 +18,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestGetEmployees(t *testing.T) {
+	router := ui.SetupRouter()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	dbConn := infra.ConnectDB(c)
+
+	wp := test.CreateWorkplace(t, c, dbConn, nil)
+	e := test.CreateEmployee(t, c, dbConn, func(v *rdb.Employee) {
+		v.Name = faker.Username()
+		v.WorkplaceID = wp.ID
+	})
+
+	c.Request, _ = http.NewRequest("GET", fmt.Sprintf("%s/%d", ui.EmployeePath, wp.ID), nil)
+	router.ServeHTTP(w, c.Request)
+
+	assert.Equal(t, w.Code, 200)
+	var res []rdb.Employee
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &res))
+	assert.NotEmpty(t, res)
+	assert.Equal(t, res[0].Name, e.Name)
+	assert.Equal(t, res[0].WorkplaceID, e.WorkplaceID)
+
+	t.Cleanup(func() {
+		require.NoError(t, rdb.New(dbConn).TestDeleteEmployee(c, res[0].ID))
+		require.NoError(t, rdb.New(dbConn).TestDeleteWorkplace(c, wp.ID))
+	})
+
+}
+
 func TestPostEmployee(t *testing.T) {
 	router := ui.SetupRouter()
 	w := httptest.NewRecorder()

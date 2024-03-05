@@ -11,6 +11,25 @@ import (
 	"github.com/taxio/errors"
 )
 
+func GetEmployees(c *gin.Context) {
+	dbConn := infra.ConnectDB(c)
+	repo := rdb.New(dbConn)
+
+	workplaceID, err := strconv.ParseInt(c.Param("workplace_id"), 10, 64)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	employees, err := repo.GetEmployees(c, workplaceID)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, employees)
+}
+
 func PostEmployee(c *gin.Context) {
 	dbConn := infra.ConnectDB(c)
 	repo := rdb.New(dbConn)
