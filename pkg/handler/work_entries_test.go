@@ -16,8 +16,39 @@ import (
 	"github.com/mio256/wplus-server/pkg/infra/rdb"
 	"github.com/mio256/wplus-server/pkg/test"
 	"github.com/mio256/wplus-server/pkg/ui"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestGetWorkEntries(t *testing.T) {
+	router := ui.SetupRouter()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	dbConn := infra.ConnectDB(c)
+
+	created := test.CreateWorkEntries(t, c, dbConn, nil)
+
+	c.Request, _ = http.NewRequest("GET", fmt.Sprintf("%s/%d", ui.WorkEntryPath, created.EmployeeID), nil)
+	router.ServeHTTP(w, c.Request)
+
+	require.Equal(t, 200, w.Code)
+	var res []rdb.WorkEntry
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &res))
+	require.NotEmpty(t, res)
+	assert.Equal(t, created.EmployeeID, res[0].EmployeeID)
+	assert.Equal(t, created.WorkplaceID, res[0].WorkplaceID)
+	assert.Equal(t, created.Date, res[0].Date)
+	assert.Equal(t, created.Hours, res[0].Hours)
+	assert.Equal(t, created.StartTime, res[0].StartTime)
+	assert.Equal(t, created.EndTime, res[0].EndTime)
+	assert.Equal(t, created.Attendance, res[0].Attendance)
+	assert.Equal(t, created.Comment, res[0].Comment)
+
+	t.Cleanup(func() {
+		require.NoError(t, rdb.New(dbConn).TestDeleteWorkEntry(c, created.ID))
+	})
+
+}
 
 func TestPostWorkEntry(t *testing.T) {
 	router := ui.SetupRouter()
