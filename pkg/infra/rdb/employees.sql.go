@@ -32,6 +32,29 @@ func (q *Queries) CreateEmployee(ctx context.Context, arg CreateEmployeeParams) 
 	return i, err
 }
 
+const getEmployee = `-- name: GetEmployee :one
+select id, name, workplace_id, deleted_at, created_at, updated_at from employees where workplace_id = $1 and id = $2 and deleted_at is null
+`
+
+type GetEmployeeParams struct {
+	WorkplaceID int64 `json:"workplace_id"`
+	ID          int64 `json:"id"`
+}
+
+func (q *Queries) GetEmployee(ctx context.Context, arg GetEmployeeParams) (Employee, error) {
+	row := q.db.QueryRow(ctx, getEmployee, arg.WorkplaceID, arg.ID)
+	var i Employee
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.WorkplaceID,
+		&i.DeletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getEmployees = `-- name: GetEmployees :many
 select id, name, workplace_id, deleted_at, created_at, updated_at from employees where workplace_id = $1 and deleted_at is null
 `
