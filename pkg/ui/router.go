@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/mio256/wplus-server/pkg/handler"
 )
@@ -12,6 +13,8 @@ const WorkEntryPath = "/work_entries"
 
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
+
+	r.Use(cors.Default())
 
 	// office
 	r.GET(OfficePath, handler.GetOffices)
