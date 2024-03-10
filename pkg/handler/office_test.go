@@ -33,7 +33,7 @@ func TestGetOffices(t *testing.T) {
 	var res []rdb.Office
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &res))
 	assert.NotEmpty(t, res)
-	assert.Equal(t, res[0].Name, created.Name)
+	assert.Contains(t, res, *created)
 
 	t.Cleanup(func() {
 		require.NoError(t, rdb.New(dbConn).TestDeleteOffice(c, created.ID))
