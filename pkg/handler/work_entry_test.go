@@ -16,6 +16,7 @@ import (
 	"github.com/mio256/wplus-server/pkg/infra/rdb"
 	"github.com/mio256/wplus-server/pkg/test"
 	"github.com/mio256/wplus-server/pkg/ui"
+	"github.com/mio256/wplus-server/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,7 +29,11 @@ func TestGetWorkEntries(t *testing.T) {
 
 	created := test.CreateWorkEntries(t, c, dbConn, nil)
 
-	c.Request, _ = http.NewRequest("GET", fmt.Sprintf("%s/%d", ui.WorkEntryPath, created.EmployeeID), nil)
+	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	require.NoError(t, err)
+	c.Request, err = http.NewRequest("GET", fmt.Sprintf("%s/%d", ui.WorkEntryPath, created.EmployeeID), nil)
+	require.NoError(t, err)
+	c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	router.ServeHTTP(w, c.Request)
 
 	require.Equal(t, 200, w.Code)
@@ -43,11 +48,6 @@ func TestGetWorkEntries(t *testing.T) {
 	assert.Equal(t, created.EndTime, res[0].EndTime)
 	assert.Equal(t, created.Attendance, res[0].Attendance)
 	assert.Equal(t, created.Comment, res[0].Comment)
-
-	t.Cleanup(func() {
-		require.NoError(t, rdb.New(dbConn).TestDeleteWorkEntry(c, created.ID))
-	})
-
 }
 
 func TestPostWorkEntry(t *testing.T) {
@@ -74,9 +74,13 @@ func TestPostWorkEntry(t *testing.T) {
 	}
 	b, err := json.Marshal(p)
 	require.NoError(t, err)
-
 	body := bytes.NewBuffer(b)
-	c.Request, _ = http.NewRequest("POST", ui.WorkEntryPath, body)
+
+	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	require.NoError(t, err)
+	c.Request, err = http.NewRequest("POST", ui.WorkEntryPath, body)
+	require.NoError(t, err)
+	c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	router.ServeHTTP(w, c.Request)
 
 	require.Equal(t, 200, w.Code)
@@ -104,13 +108,13 @@ func TestDeleteWorkEntry(t *testing.T) {
 
 	created := test.CreateWorkEntries(t, c, dbConn, nil)
 
-	c.Request, _ = http.NewRequest("DELETE", fmt.Sprintf("%s/%d", ui.WorkEntryPath, created.ID), nil)
+	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	require.NoError(t, err)
+	c.Request, err = http.NewRequest("DELETE", fmt.Sprintf("%s/%d", ui.WorkEntryPath, created.ID), nil)
+	require.NoError(t, err)
+	c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	router.ServeHTTP(w, c.Request)
 
 	require.Equal(t, 204, w.Code)
 	require.NotEmpty(t, test.CheckDeletedWorkEntry(t, c, dbConn, created.ID))
-
-	t.Cleanup(func() {
-		require.NoError(t, rdb.New(dbConn).TestDeleteWorkEntry(c, created.ID))
-	})
 }
