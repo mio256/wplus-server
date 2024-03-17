@@ -95,6 +95,39 @@ func (q *Queries) TestCreateOffice(ctx context.Context, name string) (Office, er
 	return i, err
 }
 
+const testCreateUser = `-- name: TestCreateUser :one
+insert into users (id, office_id, name, password, role) values ($1, $2, $3, $4, $5) returning id, office_id, name, password, role, created_at, updated_at
+`
+
+type TestCreateUserParams struct {
+	ID       int64    `json:"id"`
+	OfficeID int64    `json:"office_id"`
+	Name     string   `json:"name"`
+	Password string   `json:"password"`
+	Role     UserType `json:"role"`
+}
+
+func (q *Queries) TestCreateUser(ctx context.Context, arg TestCreateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, testCreateUser,
+		arg.ID,
+		arg.OfficeID,
+		arg.Name,
+		arg.Password,
+		arg.Role,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.OfficeID,
+		&i.Name,
+		&i.Password,
+		&i.Role,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const testCreateWorkEntry = `-- name: TestCreateWorkEntry :one
 insert into work_entries (employee_id, workplace_id, date, hours, start_time, end_time, attendance, comment)
 values ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -183,6 +216,15 @@ delete from offices where id = $1
 
 func (q *Queries) TestDeleteOffice(ctx context.Context, id int64) error {
 	_, err := q.db.Exec(ctx, testDeleteOffice, id)
+	return err
+}
+
+const testDeleteUser = `-- name: TestDeleteUser :exec
+delete from users where id = $1
+`
+
+func (q *Queries) TestDeleteUser(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, testDeleteUser, id)
 	return err
 }
 

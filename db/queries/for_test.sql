@@ -37,3 +37,9 @@ delete from work_entries where id = $1;
 
 -- name: TestCheckDeletedWorkEntry :one
 select deleted_at from work_entries where id = $1;
+
+-- name: TestCreateUser :one
+insert into users (id, office_id, name, password, role) values ($1, $2, $3, $4, $5) returning *;
+
+-- name: TestDeleteUser :exec
+delete from users where id = $1;
