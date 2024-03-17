@@ -48,7 +48,10 @@ func createUserCmd(ctx context.Context) *cobra.Command {
 				return errors.Wrap(err)
 			}
 			name := args[2]
-			password := args[3]
+			password, err := util.GeneratePasswordHash(args[3])
+			if err != nil {
+				return errors.Wrap(err)
+			}
 			role := rdb.UserType(args[4])
 
 			if _, err := repo.LoadCreateUser(ctx, rdb.LoadCreateUserParams{
