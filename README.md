@@ -18,7 +18,7 @@ simple work entries system
 $ docker compose -f docker-compose.dev.yaml up -d
 $ make migrate-db
 $ go get .
-$ go run .
+$ make local-server
 ```
 
 ## Author
