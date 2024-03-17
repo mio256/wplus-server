@@ -24,8 +24,11 @@ func userSubCmd(ctx context.Context) *cobra.Command {
 
 func createUserCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "load",
+		Use: "create",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 5 {
+				return errors.New("invalid args: officeID, userID, name, password, role")
+			}
 			ctx := cmd.Context()
 
 			dbConn := infra.ConnectDB(ctx)
