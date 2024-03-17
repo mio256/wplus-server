@@ -11,6 +11,49 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type UserType string
+
+const (
+	UserTypeEmployee UserType = "employee"
+	UserTypeManager  UserType = "manager"
+	UserTypeAdmin    UserType = "admin"
+)
+
+func (e *UserType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = UserType(s)
+	case string:
+		*e = UserType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for UserType: %T", src)
+	}
+	return nil
+}
+
+type NullUserType struct {
+	UserType UserType `json:"user_type"`
+	Valid    bool     `json:"valid"` // Valid is true if UserType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullUserType) Scan(value interface{}) error {
+	if value == nil {
+		ns.UserType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.UserType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullUserType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.UserType), nil
+}
+
 type WorkType string
 
 const (
@@ -67,6 +110,16 @@ type Office struct {
 	ID        int64            `json:"id"`
 	Name      string           `json:"name"`
 	DeletedAt pgtype.Timestamp `json:"deleted_at"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+}
+
+type User struct {
+	ID        int64            `json:"id"`
+	OfficeID  int64            `json:"office_id"`
+	Name      string           `json:"name"`
+	Password  string           `json:"password"`
+	Role      UserType         `json:"role"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
 	UpdatedAt pgtype.Timestamp `json:"updated_at"`
 }
