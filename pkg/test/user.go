@@ -7,10 +7,11 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/mio256/wplus-server/pkg/infra/rdb"
+	"github.com/mio256/wplus-server/pkg/util"
 	"github.com/stretchr/testify/require"
 )
 
-func CreateUser(t *testing.T, ctx context.Context, db rdb.DBTX, f func(v *rdb.User)) *rdb.User {
+func CreateUser(t *testing.T, ctx context.Context, db rdb.DBTX, f func(v *rdb.User)) (*rdb.User, string) {
 	t.Helper()
 
 	o := CreateOffice(t, ctx, db, nil)
@@ -27,11 +28,14 @@ func CreateUser(t *testing.T, ctx context.Context, db rdb.DBTX, f func(v *rdb.Us
 		f(target)
 	}
 
+	hash, err := util.GeneratePasswordHash(target.Password)
+	require.NoError(t, err)
+
 	created, err := rdb.New(db).TestCreateUser(ctx, rdb.TestCreateUserParams{
 		ID:       target.ID,
 		OfficeID: target.OfficeID,
 		Name:     target.Name,
-		Password: target.Password,
+		Password: hash,
 		Role:     target.Role,
 	})
 
@@ -41,5 +45,5 @@ func CreateUser(t *testing.T, ctx context.Context, db rdb.DBTX, f func(v *rdb.Us
 		require.NoError(t, rdb.New(db).TestDeleteUser(ctx, created.ID))
 	})
 
-	return &created
+	return &created, target.Password
 }
