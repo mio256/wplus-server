@@ -1,5 +1,13 @@
 BIN_DIR:=$(shell pwd)/bin
 
+.PHONY: local-server
+local-server:
+	go run ./cmd server local
+
+.PHONY: network-server
+network-server:
+	go run ./cmd server network
+
 .PHONY: test
 test:
 	go test ./...
