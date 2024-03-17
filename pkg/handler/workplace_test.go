@@ -14,6 +14,7 @@ import (
 	"github.com/mio256/wplus-server/pkg/infra/rdb"
 	"github.com/mio256/wplus-server/pkg/test"
 	"github.com/mio256/wplus-server/pkg/ui"
+	"github.com/mio256/wplus-server/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -29,7 +30,11 @@ func TestGetWorkplaces(t *testing.T) {
 		v.OfficeID = o.ID
 	})
 
-	c.Request, _ = http.NewRequest("GET", fmt.Sprintf("%s/%d", ui.WorkplacePath, o.ID), nil)
+	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	require.NoError(t, err)
+	c.Request, err = http.NewRequest("GET", fmt.Sprintf("%s/%d", ui.WorkplacePath, o.ID), nil)
+	require.NoError(t, err)
+	c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	router.ServeHTTP(w, c.Request)
 
 	assert.Equal(t, 200, w.Code)
@@ -39,11 +44,6 @@ func TestGetWorkplaces(t *testing.T) {
 	assert.Equal(t, wp.Name, res[0].Name)
 	assert.Equal(t, wp.OfficeID, res[0].OfficeID)
 	assert.Equal(t, wp.WorkType, res[0].WorkType)
-
-	t.Cleanup(func() {
-		require.NoError(t, rdb.New(dbConn).TestDeleteWorkplace(c, res[0].ID))
-		require.NoError(t, rdb.New(dbConn).TestDeleteOffice(c, o.ID))
-	})
 }
 
 func TestPostWorkplace(t *testing.T) {
@@ -61,9 +61,13 @@ func TestPostWorkplace(t *testing.T) {
 	}
 	b, err := json.Marshal(p)
 	require.NoError(t, err)
-
 	body := bytes.NewBuffer(b)
-	c.Request, _ = http.NewRequest("POST", ui.WorkplacePath, body)
+
+	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	require.NoError(t, err)
+	c.Request, err = http.NewRequest("POST", ui.WorkplacePath, body)
+	require.NoError(t, err)
+	c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	router.ServeHTTP(w, c.Request)
 
 	assert.Equal(t, 200, w.Code)
@@ -75,7 +79,6 @@ func TestPostWorkplace(t *testing.T) {
 	assert.Empty(t, res.DeletedAt)
 
 	t.Cleanup(func() {
-		require.NoError(t, rdb.New(dbConn).TestDeleteOffice(c, res.ID))
 		require.NoError(t, rdb.New(dbConn).TestDeleteWorkplace(c, res.ID))
 	})
 }
@@ -88,13 +91,14 @@ func TestDeleteWorkplace(t *testing.T) {
 
 	created := test.CreateWorkplace(t, c, dbConn, nil)
 
-	c.Request, _ = http.NewRequest("DELETE", fmt.Sprintf("%s/%d", ui.WorkplacePath, created.ID), nil)
+	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	require.NoError(t, err)
+	c.Request, err = http.NewRequest("DELETE", fmt.Sprintf("%s/%d", ui.WorkplacePath, created.ID), nil)
+	require.NoError(t, err)
+	c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	router.ServeHTTP(w, c.Request)
 	router.ServeHTTP(w, c.Request)
 
 	assert.Equal(t, 204, w.Code)
 	assert.NotEmpty(t, test.CheckDeletedWorkplace(t, c, dbConn, created.ID))
-
-	t.Cleanup(func() {
-		require.NoError(t, rdb.New(dbConn).TestDeleteWorkplace(c, created.ID))
-	})
 }
