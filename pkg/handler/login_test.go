@@ -24,7 +24,13 @@ func TestLogin(t *testing.T) {
 	c, _ := gin.CreateTestContext(w)
 	dbConn := infra.ConnectDB(c)
 
-	user := test.CreateUser(t, c, dbConn, nil)
+	user, plain := test.CreateUser(t, c, dbConn, nil)
+
+	require.NotEqual(t, user.Password, plain)
+	// GeneratePasswordHash はランダムな salt を使うため、hash は毎回異なる
+	// hash, err := util.GeneratePasswordHash(plain)
+	// require.NoError(t, err)
+	// require.Equal(t, user.Password, hash)
 
 	var p = struct {
 		OfficeID uint64 `json:"office_id"`
@@ -33,7 +39,7 @@ func TestLogin(t *testing.T) {
 	}{
 		OfficeID: uint64(user.OfficeID),
 		UserID:   uint64(user.ID),
-		Password: user.Password,
+		Password: plain,
 	}
 
 	b, err := json.Marshal(p)

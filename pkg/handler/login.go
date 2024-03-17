@@ -37,7 +37,7 @@ func PostLogin(c *gin.Context) {
 		return
 	}
 
-	if user.Password != input.Password {
+	if err = util.CompareHashAndPassword(user.Password, input.Password); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "Invalid password",
 		})
