@@ -31,7 +31,8 @@ func TestGetEmployees(t *testing.T) {
 		v.WorkplaceID = wp.ID
 	})
 
-	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	user, _ := test.CreateUser(t, c, dbConn, nil)
+	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
 	c.Request, err = http.NewRequest("GET", fmt.Sprintf("%s/%d", ui.EmployeePath, wp.ID), nil)
 	require.NoError(t, err)
@@ -58,7 +59,8 @@ func TestGetEmployee(t *testing.T) {
 		v.WorkplaceID = wp.ID
 	})
 
-	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	user, _ := test.CreateUser(t, c, dbConn, nil)
+	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
 	c.Request, err = http.NewRequest("GET", fmt.Sprintf("%s/%d/%d", ui.EmployeePath, wp.ID, e.ID), nil)
 	require.NoError(t, err)
@@ -89,7 +91,8 @@ func TestPostEmployee(t *testing.T) {
 	require.NoError(t, err)
 	body := bytes.NewBuffer(b)
 
-	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	user, _ := test.CreateUser(t, c, dbConn, nil)
+	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
 	c.Request, err = http.NewRequest("POST", ui.EmployeePath, body)
 	require.NoError(t, err)
@@ -115,7 +118,8 @@ func TestDeleteEmployee(t *testing.T) {
 
 	created := test.CreateEmployee(t, c, dbConn, nil)
 
-	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	user, _ := test.CreateUser(t, c, dbConn, nil)
+	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
 	c.Request, err = http.NewRequest("DELETE", fmt.Sprintf("%s/%d", ui.EmployeePath, created.ID), nil)
 	require.NoError(t, err)

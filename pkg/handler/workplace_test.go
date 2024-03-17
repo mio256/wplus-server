@@ -30,7 +30,8 @@ func TestGetWorkplaces(t *testing.T) {
 		v.OfficeID = o.ID
 	})
 
-	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	user, _ := test.CreateUser(t, c, dbConn, nil)
+	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
 	c.Request, err = http.NewRequest("GET", fmt.Sprintf("%s/%d", ui.WorkplacePath, o.ID), nil)
 	require.NoError(t, err)
@@ -63,7 +64,8 @@ func TestPostWorkplace(t *testing.T) {
 	require.NoError(t, err)
 	body := bytes.NewBuffer(b)
 
-	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	user, _ := test.CreateUser(t, c, dbConn, nil)
+	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
 	c.Request, err = http.NewRequest("POST", ui.WorkplacePath, body)
 	require.NoError(t, err)
@@ -91,7 +93,8 @@ func TestDeleteWorkplace(t *testing.T) {
 
 	created := test.CreateWorkplace(t, c, dbConn, nil)
 
-	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	user, _ := test.CreateUser(t, c, dbConn, nil)
+	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
 	c.Request, err = http.NewRequest("DELETE", fmt.Sprintf("%s/%d", ui.WorkplacePath, created.ID), nil)
 	require.NoError(t, err)

@@ -29,7 +29,8 @@ func TestGetWorkEntries(t *testing.T) {
 
 	created := test.CreateWorkEntries(t, c, dbConn, nil)
 
-	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	user, _ := test.CreateUser(t, c, dbConn, nil)
+	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
 	c.Request, err = http.NewRequest("GET", fmt.Sprintf("%s/%d", ui.WorkEntryPath, created.EmployeeID), nil)
 	require.NoError(t, err)
@@ -76,7 +77,8 @@ func TestPostWorkEntry(t *testing.T) {
 	require.NoError(t, err)
 	body := bytes.NewBuffer(b)
 
-	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	user, _ := test.CreateUser(t, c, dbConn, nil)
+	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
 	c.Request, err = http.NewRequest("POST", ui.WorkEntryPath, body)
 	require.NoError(t, err)
@@ -108,7 +110,8 @@ func TestDeleteWorkEntry(t *testing.T) {
 
 	created := test.CreateWorkEntries(t, c, dbConn, nil)
 
-	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	user, _ := test.CreateUser(t, c, dbConn, nil)
+	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
 	c.Request, err = http.NewRequest("DELETE", fmt.Sprintf("%s/%d", ui.WorkEntryPath, created.ID), nil)
 	require.NoError(t, err)

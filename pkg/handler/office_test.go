@@ -27,7 +27,8 @@ func TestGetOffices(t *testing.T) {
 
 	created := test.CreateOffice(t, c, dbConn, nil)
 
-	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	user, _ := test.CreateUser(t, c, dbConn, nil)
+	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
 	c.Request, err = http.NewRequest("GET", ui.OfficePath, nil)
 	require.NoError(t, err)
@@ -55,7 +56,8 @@ func TestPostOffice(t *testing.T) {
 	require.NoError(t, err)
 	body := bytes.NewBuffer(b)
 
-	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	user, _ := test.CreateUser(t, c, dbConn, nil)
+	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
 	c.Request, err = http.NewRequest("POST", ui.OfficePath, body)
 	require.NoError(t, err)
@@ -80,7 +82,8 @@ func TestDeleteOffice(t *testing.T) {
 
 	created := test.CreateOffice(t, c, dbConn, nil)
 
-	token, err := util.GenerateToken(uint64(test.CreateUser(t, c, dbConn, nil).ID))
+	user, _ := test.CreateUser(t, c, dbConn, nil)
+	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
 	c.Request, err = http.NewRequest("DELETE", fmt.Sprintf("%s/%d", ui.OfficePath, created.ID), nil)
 	require.NoError(t, err)
