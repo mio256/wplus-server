@@ -15,10 +15,13 @@ simple work entries system
 [Makefile](./Makefile)
 
 ```sh
-$ docker compose -f docker-compose.dev.yaml up -d
-$ make migrate-db
-$ go get .
-$ make local-server
+docker compose -f docker-compose.dev.yaml up -d
+make tools
+make migrate-db
+go get .
+cp .env.sample .env
+echo dotenv > .envrc
+make local-server
 ```
 
 ## Author
