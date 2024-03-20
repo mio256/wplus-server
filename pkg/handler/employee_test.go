@@ -110,6 +110,39 @@ func TestPostEmployee(t *testing.T) {
 	})
 }
 
+func TestChangeEmployeeWorkplace(t *testing.T) {
+	router := ui.SetupRouter()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	dbConn := infra.ConnectDB(c)
+
+	wp1 := test.CreateWorkplace(t, c, dbConn, nil)
+	wp2 := test.CreateWorkplace(t, c, dbConn, func(v *rdb.Workplace) {
+		v.OfficeID = wp1.OfficeID
+	})
+	e := test.CreateEmployee(t, c, dbConn, func(v *rdb.Employee) {
+		v.Name = faker.Username()
+		v.WorkplaceID = wp1.ID
+	})
+
+	user, _ := test.CreateUser(t, c, dbConn, nil)
+	token, err := util.GenerateToken(uint64(user.ID))
+	require.NoError(t, err)
+	body := bytes.NewBuffer([]byte(fmt.Sprintf(`{"workplace_id": %d}`, wp2.ID)))
+	c.Request, err = http.NewRequest("PUT", fmt.Sprintf("%s/%d", ui.EmployeePath, e.ID), body)
+	require.NoError(t, err)
+	c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	router.ServeHTTP(w, c.Request)
+
+	assert.Equal(t, 200, w.Code)
+	var res rdb.Employee
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &res))
+	assert.NotEmpty(t, res)
+	assert.Equal(t, e.Name, res.Name)
+	assert.NotEqual(t, wp1.ID, res.WorkplaceID)
+	assert.Equal(t, wp2.ID, res.WorkplaceID)
+}
+
 func TestDeleteEmployee(t *testing.T) {
 	router := ui.SetupRouter()
 	w := httptest.NewRecorder()
