@@ -92,5 +92,10 @@ func DeleteEmployee(c *gin.Context) {
 		return
 	}
 
+	if err := repo.SoftDeleteWorkEntriesByEmployee(c, id); err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
 	c.Status(http.StatusNoContent)
 }
