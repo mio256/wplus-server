@@ -7,20 +7,23 @@ package rdb
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createUser = `-- name: CreateUser :one
-insert into users (id, office_id, name, password, role)
-VALUES ($1, $2, $3, $4, $5)
-returning id, office_id, name, password, role, created_at, updated_at
+insert into users (id, office_id, name, password, role, employee_id)
+VALUES ($1, $2, $3, $4, $5, $6)
+returning id, office_id, name, password, role, employee_id, created_at, updated_at
 `
 
 type CreateUserParams struct {
-	ID       int64    `json:"id"`
-	OfficeID int64    `json:"office_id"`
-	Name     string   `json:"name"`
-	Password string   `json:"password"`
-	Role     UserType `json:"role"`
+	ID         int64       `json:"id"`
+	OfficeID   int64       `json:"office_id"`
+	Name       string      `json:"name"`
+	Password   string      `json:"password"`
+	Role       UserType    `json:"role"`
+	EmployeeID pgtype.Int8 `json:"employee_id"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -30,6 +33,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Name,
 		arg.Password,
 		arg.Role,
+		arg.EmployeeID,
 	)
 	var i User
 	err := row.Scan(
@@ -38,6 +42,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Name,
 		&i.Password,
 		&i.Role,
+		&i.EmployeeID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -45,7 +50,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const getUser = `-- name: GetUser :one
-select id, office_id, name, password, role, created_at, updated_at from users where id = $1 and office_id = $2
+select id, office_id, name, password, role, employee_id, created_at, updated_at from users where id = $1 and office_id = $2
 `
 
 type GetUserParams struct {
@@ -62,6 +67,7 @@ func (q *Queries) GetUser(ctx context.Context, arg GetUserParams) (User, error) 
 		&i.Name,
 		&i.Password,
 		&i.Role,
+		&i.EmployeeID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

@@ -115,13 +115,14 @@ type Office struct {
 }
 
 type User struct {
-	ID        int64            `json:"id"`
-	OfficeID  int64            `json:"office_id"`
-	Name      string           `json:"name"`
-	Password  string           `json:"password"`
-	Role      UserType         `json:"role"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	ID         int64            `json:"id"`
+	OfficeID   int64            `json:"office_id"`
+	Name       string           `json:"name"`
+	Password   string           `json:"password"`
+	Role       UserType         `json:"role"`
+	EmployeeID pgtype.Int8      `json:"employee_id"`
+	CreatedAt  pgtype.Timestamp `json:"created_at"`
+	UpdatedAt  pgtype.Timestamp `json:"updated_at"`
 }
 
 type WorkEntry struct {

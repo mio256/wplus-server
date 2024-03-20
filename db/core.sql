@@ -62,9 +62,15 @@ create table users (
     name varchar(255) not null,
     password varchar(255) not null,
     role user_type not null,
+    employee_id bigint,
     created_at timestamp not null default current_timestamp,
     updated_at timestamp not null default current_timestamp,
-    primary key (id, office_id)
+    primary key (id, office_id),
+
+    constraint chk_employee_id check (
+        (role != 'admin' and employee_id is not null) or
+        (role = 'admin' and employee_id is null)
+    )
 );
 
 -- 外部キー制約
@@ -73,3 +79,4 @@ alter table employees add constraint fk_employees_workplaces foreign key (workpl
 alter table work_entries add constraint fk_work_hours_entries_employees foreign key (employee_id) references employees(id);
 alter table work_entries add constraint fk_work_hours_entries_workplaces foreign key (workplace_id) references workplaces(id);
 alter table users add constraint fk_users_offices foreign key (office_id) references offices(id);
+alter table users add constraint fk_users_employees foreign key (employee_id) references employees(id);
