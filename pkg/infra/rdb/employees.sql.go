@@ -94,3 +94,17 @@ func (q *Queries) SoftDeleteEmployee(ctx context.Context, id int64) error {
 	_, err := q.db.Exec(ctx, softDeleteEmployee, id)
 	return err
 }
+
+const updateEmployeeWorkplace = `-- name: UpdateEmployeeWorkplace :exec
+update employees set workplace_id = $2 where id = $1 and deleted_at is null
+`
+
+type UpdateEmployeeWorkplaceParams struct {
+	ID          int64 `json:"id"`
+	WorkplaceID int64 `json:"workplace_id"`
+}
+
+func (q *Queries) UpdateEmployeeWorkplace(ctx context.Context, arg UpdateEmployeeWorkplaceParams) error {
+	_, err := q.db.Exec(ctx, updateEmployeeWorkplace, arg.ID, arg.WorkplaceID)
+	return err
+}

@@ -77,6 +77,44 @@ func PostEmployee(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, employee)
 }
 
+func ChangeEmployeeWorkplace(c *gin.Context) {
+	dbConn := infra.ConnectDB(c)
+	repo := rdb.New(dbConn)
+
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	var input struct {
+		WorkplaceID int64 `json:"workplace_id"`
+	}
+	if err := c.BindJSON(&input); err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	if err := repo.UpdateEmployeeWorkplace(c, rdb.UpdateEmployeeWorkplaceParams{
+		ID:          id,
+		WorkplaceID: input.WorkplaceID,
+	}); err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	employee, err := repo.GetEmployee(c, rdb.GetEmployeeParams{
+		ID:          id,
+		WorkplaceID: input.WorkplaceID,
+	})
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, employee)
+}
+
 func DeleteEmployee(c *gin.Context) {
 	dbConn := infra.ConnectDB(c)
 	repo := rdb.New(dbConn)

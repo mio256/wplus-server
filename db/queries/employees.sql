@@ -9,3 +9,6 @@ insert into employees (name, workplace_id) values ($1, $2) returning *;
 
 -- name: SoftDeleteEmployee :exec
 update employees set deleted_at = now() where id = $1;
+
+-- name: UpdateEmployeeWorkplace :exec
+update employees set workplace_id = $2 where id = $1 and deleted_at is null;
