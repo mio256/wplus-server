@@ -55,9 +55,10 @@ func PostLogin(c *gin.Context) {
 	domain := os.Getenv("DOMAIN")
 	c.SetCookie("token", token, 3600, "/", domain, false, true)
 	c.JSON(http.StatusOK, gin.H{
-		"office_id": user.OfficeID,
-		"user_id":   user.ID,
-		"name":      user.Name,
-		"role":      user.Role,
+		"office_id":   user.OfficeID,
+		"user_id":     user.ID,
+		"employee_id": user.EmployeeID,
+		"name":        user.Name,
+		"role":        user.Role,
 	})
 }
