@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-faker/faker/v4"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mio256/wplus-server/pkg/infra/rdb"
 	"github.com/mio256/wplus-server/pkg/util"
 	"github.com/stretchr/testify/require"
@@ -17,11 +18,12 @@ func CreateUser(t *testing.T, ctx context.Context, db rdb.DBTX, f func(v *rdb.Us
 	o := CreateOffice(t, ctx, db, nil)
 
 	target := &rdb.User{
-		ID:       rand.Int63(),
-		OfficeID: o.ID,
-		Name:     faker.Username(),
-		Password: faker.Password(),
-		Role:     rdb.UserTypeAdmin,
+		ID:         rand.Int63(),
+		OfficeID:   o.ID,
+		Name:       faker.Username(),
+		Password:   faker.Password(),
+		Role:       rdb.UserTypeAdmin,
+		EmployeeID: pgtype.Int8{},
 	}
 
 	if f != nil {
@@ -32,11 +34,12 @@ func CreateUser(t *testing.T, ctx context.Context, db rdb.DBTX, f func(v *rdb.Us
 	require.NoError(t, err)
 
 	created, err := rdb.New(db).TestCreateUser(ctx, rdb.TestCreateUserParams{
-		ID:       target.ID,
-		OfficeID: target.OfficeID,
-		Name:     target.Name,
-		Password: hash,
-		Role:     target.Role,
+		ID:         target.ID,
+		OfficeID:   target.OfficeID,
+		Name:       target.Name,
+		Password:   hash,
+		Role:       target.Role,
+		EmployeeID: target.EmployeeID,
 	})
 
 	require.NoError(t, err)
