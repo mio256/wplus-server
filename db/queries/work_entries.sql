@@ -8,3 +8,6 @@ returning *;
 
 -- name: SoftDeleteWorkEntry :exec
 update work_entries set deleted_at = now() where id = $1;
+
+-- name: SoftDeleteWorkEntriesByEmployee :exec
+update work_entries set deleted_at = now() where employee_id = $1 and deleted_at is null;
