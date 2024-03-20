@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mio256/wplus-server/pkg/infra"
 	"github.com/mio256/wplus-server/pkg/infra/rdb"
 	"github.com/mio256/wplus-server/pkg/util"
@@ -26,8 +27,8 @@ func createUserCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "create",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 5 {
-				return errors.New("invalid args: officeID, userID, name, password, role")
+			if len(args) != 6 {
+				return errors.New("invalid args: officeID, userID, name, password, role, employeeID(null)")
 			}
 			ctx := cmd.Context()
 
@@ -56,14 +57,32 @@ func createUserCmd(ctx context.Context) *cobra.Command {
 				return errors.Wrap(err)
 			}
 			role := rdb.UserType(args[4])
+			employeeID := pgtype.Int8{}
+			if args[5] != "null" {
+				id, err := strconv.ParseUint(args[5], 10, 64)
+				if err != nil {
+					return errors.Wrap(err)
+				}
+				employeeOfficeID, err := repo.GetEmployeeOffice(ctx, int64(id))
+				if err != nil {
+					return errors.Wrap(err)
+				}
+				if officeID != uint64(employeeOfficeID) {
+					return errors.Wrap(errors.New("invalid officeID for employeeID"))
+				}
+				employeeID = pgtype.Int8{Int64: int64(id), Valid: true}
+			}
 
-			if _, err := repo.LoadCreateUser(ctx, rdb.LoadCreateUserParams{
-				OfficeID: int64(officeID),
-				ID:       int64(userID),
-				Name:     name,
-				Password: password,
-				Role:     role,
-			}); err != nil {
+			params := rdb.LoadCreateUserParams{
+				ID:         int64(userID),
+				OfficeID:   int64(officeID),
+				Name:       name,
+				Password:   password,
+				Role:       role,
+				EmployeeID: employeeID,
+			}
+
+			if _, err := repo.LoadCreateUser(ctx, params); err != nil {
 				if !errors.Is(err, pgx.ErrNoRows) {
 					return errors.Wrap(err)
 				}
