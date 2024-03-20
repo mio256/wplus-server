@@ -94,6 +94,15 @@ func (q *Queries) GetWorkEntriesByEmployee(ctx context.Context, employeeID int64
 	return items, nil
 }
 
+const softDeleteWorkEntriesByEmployee = `-- name: SoftDeleteWorkEntriesByEmployee :exec
+update work_entries set deleted_at = now() where employee_id = $1 and deleted_at is null
+`
+
+func (q *Queries) SoftDeleteWorkEntriesByEmployee(ctx context.Context, employeeID int64) error {
+	_, err := q.db.Exec(ctx, softDeleteWorkEntriesByEmployee, employeeID)
+	return err
+}
+
 const softDeleteWorkEntry = `-- name: SoftDeleteWorkEntry :exec
 update work_entries set deleted_at = now() where id = $1
 `

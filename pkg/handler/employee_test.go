@@ -117,6 +117,10 @@ func TestDeleteEmployee(t *testing.T) {
 	dbConn := infra.ConnectDB(c)
 
 	created := test.CreateEmployee(t, c, dbConn, nil)
+	entry := test.CreateWorkEntries(t, c, dbConn, func(v *rdb.WorkEntry) {
+		v.EmployeeID = created.ID
+		v.WorkplaceID = created.WorkplaceID
+	})
 
 	user, _ := test.CreateUser(t, c, dbConn, nil)
 	token, err := util.GenerateToken(uint64(user.ID))
@@ -128,4 +132,5 @@ func TestDeleteEmployee(t *testing.T) {
 
 	assert.Equal(t, 204, w.Code)
 	assert.NotEmpty(t, test.CheckDeletedEmployee(t, c, dbConn, created.ID))
+	assert.NotEmpty(t, test.CheckDeletedWorkEntry(t, c, dbConn, entry.ID))
 }

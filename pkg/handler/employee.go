@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
@@ -87,13 +86,16 @@ func DeleteEmployee(c *gin.Context) {
 		c.Error(errors.Wrap(err))
 		return
 	}
-	log.Print(id)
 
 	if err := repo.SoftDeleteEmployee(c, id); err != nil {
 		c.Error(errors.Wrap(err))
 		return
 	}
-	log.Print("success")
+
+	if err := repo.SoftDeleteWorkEntriesByEmployee(c, id); err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
 
 	c.Status(http.StatusNoContent)
 }
