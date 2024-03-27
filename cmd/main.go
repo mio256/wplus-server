@@ -22,6 +22,7 @@ func rootCmd(ctx context.Context) *cobra.Command {
 	cmd.AddCommand(
 		serverCmd(ctx),
 		userSubCmd(ctx),
+		outputCmd(ctx),
 	)
 
 	return cmd
