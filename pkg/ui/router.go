@@ -18,9 +18,17 @@ func SetupRouter() *gin.Engine {
 
 	r.Use(cors.Default())
 
+	// ping
+	r.GET("/ping", func(context *gin.Context) {
+		context.JSON(200, gin.H{
+			"message": "pong",
+		})
+	})
+
 	// login
 	r.POST(LoginPath, handler.PostLogin)
 
+	// private
 	p := r.Group("")
 	p.Use(util.AuthMiddleware)
 	// office
