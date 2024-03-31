@@ -9,17 +9,3 @@ services:
     container_name: server
     ports:
       - "8080:8080"
-  db:
-    image: postgres:16.1
-    container_name: db
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=wplus
-    volumes:
-      - local_wplus_volume:/var/lib/postgresql/data
-
-volumes:
-  local_wplus_volume:
