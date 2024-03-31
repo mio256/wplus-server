@@ -19,7 +19,26 @@ func userSubCmd(ctx context.Context) *cobra.Command {
 	}
 	cmd.AddCommand(
 		createUserCmd(ctx),
+		createPasswordCmd(ctx),
 	)
+	return cmd
+}
+
+func createPasswordCmd(ctx context.Context) *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "password",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				return errors.New("invalid args: password")
+			}
+			password, err := util.GeneratePasswordHash(args[0])
+			if err != nil {
+				return errors.Wrap(err)
+			}
+			cmd.Println(password)
+			return nil
+		},
+	}
 	return cmd
 }
 
