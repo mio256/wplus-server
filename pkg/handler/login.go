@@ -52,13 +52,27 @@ func PostLogin(c *gin.Context) {
 		return
 	}
 
+	// TODO: return NULL if !user.EmployeeID.Valid
+	workplaceID := 0
+	if user.EmployeeID.Valid {
+		employee, err := repo.GetEmployeeById(c, user.EmployeeID.Int64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "Employee not found",
+			})
+			return
+		}
+		workplaceID = int(employee.WorkplaceID)
+	}
+
 	domain := os.Getenv("DOMAIN")
 	c.SetCookie("token", token, 3600, "/", domain, false, true)
 	c.JSON(http.StatusOK, gin.H{
-		"office_id":   user.OfficeID,
-		"user_id":     user.ID,
-		"employee_id": user.EmployeeID,
-		"name":        user.Name,
-		"role":        user.Role,
+		"office_id":    user.OfficeID,
+		"user_id":      user.ID,
+		"employee_id":  user.EmployeeID,
+		"workplace_id": workplaceID,
+		"name":         user.Name,
+		"role":         user.Role,
 	})
 }
