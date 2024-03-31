@@ -1,14 +1,22 @@
 import requests
 
 # この2つは固定
-base_url = 'http://localhost:8080'
+base_url = 'https://wplus-service-7gmfn2s4tq-dt.a.run.app/' # デプロイ先のURL
 headers = {'Content-Type': 'application/json'}
+
+# serverの生存確認
+response = requests.get(base_url+'/ping', headers=headers)
+print(response.json())  # {'message': 'pong'}
+
+# dbの生存確認
+response = requests.get(base_url+'/db-ping', headers=headers)
+print(response.json())  # {'message': 'db-pong'}
 
 # ログインフォームから取得してくる
 data = {
-    'office_id': 1,
-    'user_id': 1,
-    'password': 'pass'
+    'office_id': int(input('office_id: ')),
+    'user_id': int(input('user_id: ')),
+    'password': input('password: ')
 }
 
 response = requests.post(base_url+'/login', headers=headers, json=data)
