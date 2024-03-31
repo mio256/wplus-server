@@ -54,7 +54,7 @@ func PostWorkEntry(c *gin.Context) {
 
 	p.EmployeeID = input.EmployeeID
 	p.WorkplaceID = input.WorkplaceID
-	date, err := time.Parse("2006-01-02T15:04:05.000000Z", input.Date)
+	date, err := time.Parse("2006-01-02T15:04:05.000Z", input.Date)
 	if err != nil {
 		c.Error(errors.Wrap(err))
 		return
@@ -75,7 +75,7 @@ func PostWorkEntry(c *gin.Context) {
 			Valid: true,
 		}
 	} else {
-		startTime, err := time.Parse("2006-01-02T15:04:05.000000Z", input.StartTime)
+		startTime, err := time.Parse("2006-01-02T15:04:05.000Z", input.StartTime)
 		if err != nil {
 			c.Error(errors.Wrap(err))
 			return
@@ -88,7 +88,7 @@ func PostWorkEntry(c *gin.Context) {
 			c.Error(errors.Wrap(err))
 			return
 		}
-		endTime, err := time.Parse("2006-01-02T15:04:05.000000Z", input.EndTime)
+		endTime, err := time.Parse("2006-01-02T15:04:05.000Z", input.EndTime)
 		if err != nil {
 			c.Error(errors.Wrap(err))
 			return
