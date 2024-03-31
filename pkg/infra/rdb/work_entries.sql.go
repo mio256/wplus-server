@@ -95,38 +95,22 @@ func (q *Queries) GetWorkEntriesByEmployee(ctx context.Context, employeeID int64
 }
 
 const getWorkEntriesByOffice = `-- name: GetWorkEntriesByOffice :many
-select work_entries.id, employee_id, workplace_id, date, hours, start_time, end_time, attendance, comment, work_entries.deleted_at, work_entries.created_at, work_entries.updated_at, workplaces.id, workplaces.name, office_id, work_type, workplaces.deleted_at, workplaces.created_at, workplaces.updated_at, offices.id, offices.name, offices.deleted_at, offices.created_at, offices.updated_at
+select work_entries.id, workplaces.name, employees.name, work_entries.date, work_entries.start_time, work_entries.end_time, work_entries.comment
 from work_entries
+join employees on work_entries.employee_id = employees.id
 join workplaces on work_entries.workplace_id = workplaces.id
 join offices on workplaces.office_id = offices.id
 where offices.id = $1 and work_entries.deleted_at is null
 `
 
 type GetWorkEntriesByOfficeRow struct {
-	ID          int64            `json:"id"`
-	EmployeeID  int64            `json:"employee_id"`
-	WorkplaceID int64            `json:"workplace_id"`
-	Date        pgtype.Date      `json:"date"`
-	Hours       pgtype.Int2      `json:"hours"`
-	StartTime   pgtype.Time      `json:"start_time"`
-	EndTime     pgtype.Time      `json:"end_time"`
-	Attendance  pgtype.Bool      `json:"attendance"`
-	Comment     pgtype.Text      `json:"comment"`
-	DeletedAt   pgtype.Timestamp `json:"deleted_at"`
-	CreatedAt   pgtype.Timestamp `json:"created_at"`
-	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
-	ID_2        int64            `json:"id_2"`
-	Name        string           `json:"name"`
-	OfficeID    int64            `json:"office_id"`
-	WorkType    WorkType         `json:"work_type"`
-	DeletedAt_2 pgtype.Timestamp `json:"deleted_at_2"`
-	CreatedAt_2 pgtype.Timestamp `json:"created_at_2"`
-	UpdatedAt_2 pgtype.Timestamp `json:"updated_at_2"`
-	ID_3        int64            `json:"id_3"`
-	Name_2      string           `json:"name_2"`
-	DeletedAt_3 pgtype.Timestamp `json:"deleted_at_3"`
-	CreatedAt_3 pgtype.Timestamp `json:"created_at_3"`
-	UpdatedAt_3 pgtype.Timestamp `json:"updated_at_3"`
+	ID        int64       `json:"id"`
+	Name      string      `json:"name"`
+	Name_2    string      `json:"name_2"`
+	Date      pgtype.Date `json:"date"`
+	StartTime pgtype.Time `json:"start_time"`
+	EndTime   pgtype.Time `json:"end_time"`
+	Comment   pgtype.Text `json:"comment"`
 }
 
 func (q *Queries) GetWorkEntriesByOffice(ctx context.Context, id int64) ([]GetWorkEntriesByOfficeRow, error) {
@@ -140,29 +124,12 @@ func (q *Queries) GetWorkEntriesByOffice(ctx context.Context, id int64) ([]GetWo
 		var i GetWorkEntriesByOfficeRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.EmployeeID,
-			&i.WorkplaceID,
+			&i.Name,
+			&i.Name_2,
 			&i.Date,
-			&i.Hours,
 			&i.StartTime,
 			&i.EndTime,
-			&i.Attendance,
 			&i.Comment,
-			&i.DeletedAt,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.ID_2,
-			&i.Name,
-			&i.OfficeID,
-			&i.WorkType,
-			&i.DeletedAt_2,
-			&i.CreatedAt_2,
-			&i.UpdatedAt_2,
-			&i.ID_3,
-			&i.Name_2,
-			&i.DeletedAt_3,
-			&i.CreatedAt_3,
-			&i.UpdatedAt_3,
 		); err != nil {
 			return nil, err
 		}
