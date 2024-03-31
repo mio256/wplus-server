@@ -4,6 +4,9 @@ select * from employees where workplace_id = $1 and deleted_at is null;
 -- name: GetEmployee :one
 select * from employees where workplace_id = $1 and id = $2 and deleted_at is null;
 
+-- name: GetEmployeeById :one
+select * from employees where id = $1 and deleted_at is null;
+
 -- name: GetEmployeeOffice :one
 select workplaces.office_id
 from employees
