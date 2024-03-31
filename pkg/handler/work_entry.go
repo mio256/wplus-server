@@ -3,8 +3,10 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mio256/wplus-server/pkg/infra"
 	"github.com/mio256/wplus-server/pkg/infra/rdb"
 	"github.com/taxio/errors"
@@ -33,13 +35,79 @@ func PostWorkEntry(c *gin.Context) {
 	dbConn := infra.ConnectDB(c)
 	repo := rdb.New(dbConn)
 
-	var input rdb.CreateWorkEntryParams
+	var input struct {
+		EmployeeID  int64  `json:"employee_id"`
+		WorkplaceID int64  `json:"workplace_id"`
+		Date        string `json:"date"`
+		Hours       int    `json:"hours"`
+		StartTime   string `json:"start_time"`
+		EndTime     string `json:"end_time"`
+		Attendance  bool   `json:"attendance"`
+		Comment     string `json:"comment"`
+	}
 	if err := c.BindJSON(&input); err != nil {
 		c.Error(errors.Wrap(err))
 		return
 	}
 
-	workEntry, err := repo.CreateWorkEntry(c, input)
+	var p rdb.CreateWorkEntryParams
+
+	p.EmployeeID = input.EmployeeID
+	p.WorkplaceID = input.WorkplaceID
+	date, err := time.Parse("2006-01-02T15:04:05.000000Z", input.Date)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+	p.Date = pgtype.Date{
+		Time:  date,
+		Valid: true,
+	}
+
+	if input.Attendance {
+		p.Attendance = pgtype.Bool{
+			Bool:  true,
+			Valid: true,
+		}
+	} else if input.Hours > 0 {
+		p.Hours = pgtype.Int2{
+			Int16: int16(input.Hours),
+			Valid: true,
+		}
+	} else {
+		startTime, err := time.Parse("2006-01-02T15:04:05.000000Z", input.StartTime)
+		if err != nil {
+			c.Error(errors.Wrap(err))
+			return
+		}
+		p.StartTime = pgtype.Time{
+			Microseconds: startTime.UnixMicro(),
+			Valid:        true,
+		}
+		if err != nil {
+			c.Error(errors.Wrap(err))
+			return
+		}
+		endTime, err := time.Parse("2006-01-02T15:04:05.000000Z", input.EndTime)
+		if err != nil {
+			c.Error(errors.Wrap(err))
+			return
+		}
+		p.EndTime = pgtype.Time{
+			Microseconds: endTime.UnixMicro(),
+			Valid:        true,
+		}
+		if err != nil {
+			c.Error(errors.Wrap(err))
+			return
+		}
+	}
+
+	if p.Comment.Valid {
+		p.Comment = pgtype.Text{String: input.Comment, Valid: true}
+	}
+
+	workEntry, err := repo.CreateWorkEntry(c, p)
 	if err != nil {
 		c.Error(errors.Wrap(err))
 		return
