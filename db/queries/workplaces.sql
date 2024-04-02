@@ -1,3 +1,6 @@
+-- name: GetWorkplace :one
+select * from workplaces where id = $1 and deleted_at is null;
+
 -- name: GetWorkplaces :many
 select * from workplaces where office_id = $1 and deleted_at is null;
 

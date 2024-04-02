@@ -1,5 +1,24 @@
 -- name: GetWorkEntriesByEmployee :many
-select * from work_entries where employee_id = $1 and deleted_at is null;
+select workplaces.name as workplace_name, employees.name as employee_name, work_entries.*
+from work_entries
+join employees on work_entries.employee_id = employees.id
+join workplaces on work_entries.workplace_id = workplaces.id
+where employees.id = $1 and work_entries.deleted_at is null;
+
+-- name: GetWorkEntriesByOffice :many
+select workplaces.name as workplace_name, employees.name as employee_name, work_entries.*
+from work_entries
+join employees on work_entries.employee_id = employees.id
+join workplaces on work_entries.workplace_id = workplaces.id
+join offices on workplaces.office_id = offices.id
+where offices.id = $1 and work_entries.deleted_at is null;
+
+-- name: GetWorkEntriesByWorkplace :many
+select workplaces.name as workplace_name, employees.name as employee_name, work_entries.*
+from work_entries
+join employees on work_entries.employee_id = employees.id
+join workplaces on work_entries.workplace_id = workplaces.id
+where workplaces.id = $1 and work_entries.deleted_at is null;
 
 -- name: CreateWorkEntry :one
 insert into work_entries (employee_id, workplace_id, date, hours, start_time, end_time, attendance, comment)

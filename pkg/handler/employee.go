@@ -5,13 +5,31 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mio256/wplus-server/pkg/infra"
 	"github.com/mio256/wplus-server/pkg/infra/rdb"
 	"github.com/taxio/errors"
 )
 
+func GetEmployeesByOffice(c *gin.Context) {
+	dbConn := c.MustGet("db").(rdb.DBTX)
+	repo := rdb.New(dbConn)
+
+	officeID, err := strconv.ParseInt(c.Param("office_id"), 10, 64)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	employees, err := repo.GetEmployeesByOffice(c, officeID)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, employees)
+}
+
 func GetEmployees(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	workplaceID, err := strconv.ParseInt(c.Param("workplace_id"), 10, 64)
@@ -30,14 +48,8 @@ func GetEmployees(c *gin.Context) {
 }
 
 func GetEmployee(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
-
-	workplaceID, err := strconv.ParseInt(c.Param("workplace_id"), 10, 64)
-	if err != nil {
-		c.Error(errors.Wrap(err))
-		return
-	}
 
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -45,10 +57,7 @@ func GetEmployee(c *gin.Context) {
 		return
 	}
 
-	employee, err := repo.GetEmployee(c, rdb.GetEmployeeParams{
-		WorkplaceID: workplaceID,
-		ID:          id,
-	})
+	employee, err := repo.GetEmployee(c, id)
 	if err != nil {
 		c.Error(errors.Wrap(err))
 		return
@@ -59,7 +68,7 @@ func GetEmployee(c *gin.Context) {
 }
 
 func PostEmployee(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	var input rdb.CreateEmployeeParams
@@ -78,7 +87,7 @@ func PostEmployee(c *gin.Context) {
 }
 
 func ChangeEmployeeWorkplace(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -103,10 +112,7 @@ func ChangeEmployeeWorkplace(c *gin.Context) {
 		return
 	}
 
-	employee, err := repo.GetEmployee(c, rdb.GetEmployeeParams{
-		ID:          id,
-		WorkplaceID: input.WorkplaceID,
-	})
+	employee, err := repo.GetEmployee(c, id)
 	if err != nil {
 		c.Error(errors.Wrap(err))
 		return
@@ -116,7 +122,7 @@ func ChangeEmployeeWorkplace(c *gin.Context) {
 }
 
 func DeleteEmployee(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)

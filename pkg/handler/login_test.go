@@ -84,11 +84,12 @@ func TestLogin(t *testing.T) {
 
 			assert.Equal(t, 200, w.Code)
 			var res struct {
-				OfficeID   uint64 `json:"office_id"`
-				UserID     uint64 `json:"user_id"`
-				Name       string `json:"name"`
-				Role       string `json:"role"`
-				EmployeeID uint64 `json:"employee_id"`
+				OfficeID    uint64 `json:"office_id"`
+				UserID      uint64 `json:"user_id"`
+				Name        string `json:"name"`
+				WorkplaceID int64  `json:"workplace_id"`
+				Role        string `json:"role"`
+				EmployeeID  uint64 `json:"employee_id"`
 			}
 			t.Log(w.Body.Bytes())
 			t.Log(json.Unmarshal(w.Body.Bytes(), &res))
@@ -99,8 +100,10 @@ func TestLogin(t *testing.T) {
 			assert.Equal(t, user.Role, rdb.UserType(res.Role))
 			if tt.WantEmployeeID {
 				assert.Equal(t, employee.ID, int64(res.EmployeeID))
+				assert.Equal(t, employee.WorkplaceID, res.WorkplaceID)
 			} else {
 				assert.Empty(t, res.EmployeeID)
+				assert.Empty(t, res.WorkplaceID)
 			}
 
 			cookie := w.Header().Get("Set-Cookie")

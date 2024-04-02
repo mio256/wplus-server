@@ -1,3 +1,6 @@
+-- name: Ping :exec
+select 1;
+
 -- name: TestCreateOffice :one
 insert into offices (name) values ($1) returning *;
 

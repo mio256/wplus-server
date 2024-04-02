@@ -11,6 +11,15 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const ping = `-- name: Ping :exec
+select 1
+`
+
+func (q *Queries) Ping(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, ping)
+	return err
+}
+
 const testCheckDeletedEmployee = `-- name: TestCheckDeletedEmployee :one
 select deleted_at from employees where id = $1
 `

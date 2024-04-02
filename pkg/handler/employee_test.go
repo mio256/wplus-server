@@ -19,6 +19,37 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestGetEmployeesByOffice(t *testing.T) {
+	router := ui.SetupRouter()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	dbConn := infra.ConnectDB(c)
+
+	office := test.CreateOffice(t, c, dbConn, nil)
+	wp := test.CreateWorkplace(t, c, dbConn, func(v *rdb.Workplace) {
+		v.OfficeID = office.ID
+	})
+	e := test.CreateEmployee(t, c, dbConn, func(v *rdb.Employee) {
+		v.Name = faker.Username()
+		v.WorkplaceID = wp.ID
+	})
+
+	user, _ := test.CreateUser(t, c, dbConn, nil)
+	token, err := util.GenerateToken(uint64(user.ID))
+	require.NoError(t, err)
+	c.Request, err = http.NewRequest("GET", fmt.Sprintf("%s/office/%d", ui.EmployeePath, office.ID), nil)
+	require.NoError(t, err)
+	c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	router.ServeHTTP(w, c.Request)
+
+	assert.Equal(t, 200, w.Code)
+	var res []rdb.Employee
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &res))
+	assert.NotEmpty(t, res)
+	assert.Equal(t, e.Name, res[0].Name)
+	assert.Equal(t, e.WorkplaceID, res[0].WorkplaceID)
+}
+
 func TestGetEmployees(t *testing.T) {
 	router := ui.SetupRouter()
 	w := httptest.NewRecorder()
@@ -34,7 +65,7 @@ func TestGetEmployees(t *testing.T) {
 	user, _ := test.CreateUser(t, c, dbConn, nil)
 	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
-	c.Request, err = http.NewRequest("GET", fmt.Sprintf("%s/%d", ui.EmployeePath, wp.ID), nil)
+	c.Request, err = http.NewRequest("GET", fmt.Sprintf("%s/workplace/%d", ui.EmployeePath, wp.ID), nil)
 	require.NoError(t, err)
 	c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	router.ServeHTTP(w, c.Request)
@@ -62,7 +93,7 @@ func TestGetEmployee(t *testing.T) {
 	user, _ := test.CreateUser(t, c, dbConn, nil)
 	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
-	c.Request, err = http.NewRequest("GET", fmt.Sprintf("%s/%d/%d", ui.EmployeePath, wp.ID, e.ID), nil)
+	c.Request, err = http.NewRequest("GET", fmt.Sprintf("%s/%d", ui.EmployeePath, e.ID), nil)
 	require.NoError(t, err)
 	c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	router.ServeHTTP(w, c.Request)
