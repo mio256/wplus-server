@@ -14,10 +14,18 @@ const WorkplacePath = "/workplaces"
 const EmployeePath = "/employees"
 const WorkEntryPath = "/work_entries"
 
+func DBContext() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		dbConn := infra.ConnectDB(c)
+		c.Set("db", dbConn)
+	}
+}
+
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
 
 	r.Use(cors.Default())
+	r.Use(DBContext())
 
 	// ping
 	r.GET("/ping", func(ctx *gin.Context) {
