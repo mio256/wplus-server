@@ -33,55 +33,11 @@ func (q *Queries) CreateEmployee(ctx context.Context, arg CreateEmployeeParams) 
 }
 
 const getEmployee = `-- name: GetEmployee :one
-select id, name, workplace_id, deleted_at, created_at, updated_at from employees where workplace_id = $1 and id = $2 and deleted_at is null
-`
-
-type GetEmployeeParams struct {
-	WorkplaceID int64 `json:"workplace_id"`
-	ID          int64 `json:"id"`
-}
-
-func (q *Queries) GetEmployee(ctx context.Context, arg GetEmployeeParams) (Employee, error) {
-	row := q.db.QueryRow(ctx, getEmployee, arg.WorkplaceID, arg.ID)
-	var i Employee
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.WorkplaceID,
-		&i.DeletedAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getEmployeeById = `-- name: GetEmployeeById :one
 select id, name, workplace_id, deleted_at, created_at, updated_at from employees where id = $1 and deleted_at is null
 `
 
-func (q *Queries) GetEmployeeById(ctx context.Context, id int64) (Employee, error) {
-	row := q.db.QueryRow(ctx, getEmployeeById, id)
-	var i Employee
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.WorkplaceID,
-		&i.DeletedAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getEmployeeByOffice = `-- name: GetEmployeeByOffice :one
-select employees.id, employees.name, employees.workplace_id, employees.deleted_at, employees.created_at, employees.updated_at
-from employees
-join workplaces on employees.workplace_id = workplaces.id
-where workplaces.office_id = $1 and employees.deleted_at is null
-`
-
-func (q *Queries) GetEmployeeByOffice(ctx context.Context, officeID int64) (Employee, error) {
-	row := q.db.QueryRow(ctx, getEmployeeByOffice, officeID)
+func (q *Queries) GetEmployee(ctx context.Context, id int64) (Employee, error) {
+	row := q.db.QueryRow(ctx, getEmployee, id)
 	var i Employee
 	err := row.Scan(
 		&i.ID,
@@ -97,7 +53,7 @@ func (q *Queries) GetEmployeeByOffice(ctx context.Context, officeID int64) (Empl
 const getEmployeeOffice = `-- name: GetEmployeeOffice :one
 select workplaces.office_id
 from employees
-    join workplaces on employees.workplace_id = workplaces.id
+         join workplaces on employees.workplace_id = workplaces.id
 where employees.id = $1 and employees.deleted_at is null
 `
 
@@ -114,6 +70,40 @@ select id, name, workplace_id, deleted_at, created_at, updated_at from employees
 
 func (q *Queries) GetEmployees(ctx context.Context, workplaceID int64) ([]Employee, error) {
 	rows, err := q.db.Query(ctx, getEmployees, workplaceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Employee
+	for rows.Next() {
+		var i Employee
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.WorkplaceID,
+			&i.DeletedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getEmployeesByOffice = `-- name: GetEmployeesByOffice :many
+select employees.id, employees.name, employees.workplace_id, employees.deleted_at, employees.created_at, employees.updated_at
+from employees
+join workplaces on employees.workplace_id = workplaces.id
+where workplaces.office_id = $1 and employees.deleted_at is null
+`
+
+func (q *Queries) GetEmployeesByOffice(ctx context.Context, officeID int64) ([]Employee, error) {
+	rows, err := q.db.Query(ctx, getEmployeesByOffice, officeID)
 	if err != nil {
 		return nil, err
 	}
