@@ -5,13 +5,12 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mio256/wplus-server/pkg/infra"
 	"github.com/mio256/wplus-server/pkg/infra/rdb"
 	"github.com/taxio/errors"
 )
 
 func GetOffices(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	offices, err := repo.AllOffices(c)
@@ -24,7 +23,7 @@ func GetOffices(c *gin.Context) {
 }
 
 func PostOffice(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	var input struct {
@@ -45,7 +44,7 @@ func PostOffice(c *gin.Context) {
 }
 
 func DeleteOffice(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)

@@ -5,13 +5,12 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mio256/wplus-server/pkg/infra"
 	"github.com/mio256/wplus-server/pkg/infra/rdb"
 	"github.com/taxio/errors"
 )
 
 func GetEmployees(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	workplaceID, err := strconv.ParseInt(c.Param("workplace_id"), 10, 64)
@@ -30,7 +29,7 @@ func GetEmployees(c *gin.Context) {
 }
 
 func GetEmployee(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	workplaceID, err := strconv.ParseInt(c.Param("workplace_id"), 10, 64)
@@ -59,7 +58,7 @@ func GetEmployee(c *gin.Context) {
 }
 
 func PostEmployee(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	var input rdb.CreateEmployeeParams
@@ -78,7 +77,7 @@ func PostEmployee(c *gin.Context) {
 }
 
 func ChangeEmployeeWorkplace(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -116,7 +115,7 @@ func ChangeEmployeeWorkplace(c *gin.Context) {
 }
 
 func DeleteEmployee(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)

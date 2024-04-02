@@ -5,13 +5,12 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mio256/wplus-server/pkg/infra"
 	"github.com/mio256/wplus-server/pkg/infra/rdb"
 	"github.com/taxio/errors"
 )
 
 func GetWorkplaces(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	officeID, err := strconv.ParseInt(c.Param("office_id"), 10, 64)
@@ -30,7 +29,7 @@ func GetWorkplaces(c *gin.Context) {
 }
 
 func PostWorkplace(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	var input rdb.CreateWorkplaceParams
@@ -49,7 +48,7 @@ func PostWorkplace(c *gin.Context) {
 }
 
 func DeleteWorkplace(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
