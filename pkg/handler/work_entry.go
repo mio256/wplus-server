@@ -7,13 +7,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/mio256/wplus-server/pkg/infra"
 	"github.com/mio256/wplus-server/pkg/infra/rdb"
 	"github.com/taxio/errors"
 )
 
 func GetWorkEntries(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	employeeID, err := strconv.ParseInt(c.Param("employee_id"), 10, 64)
@@ -32,7 +31,7 @@ func GetWorkEntries(c *gin.Context) {
 }
 
 func GetWorkEntriesByOffice(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	officeID, err := strconv.ParseInt(c.Param("office_id"), 10, 64)
@@ -51,7 +50,7 @@ func GetWorkEntriesByOffice(c *gin.Context) {
 }
 
 func PostWorkEntry(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	var input struct {
@@ -135,7 +134,7 @@ func PostWorkEntry(c *gin.Context) {
 }
 
 func DeleteWorkEntry(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)

@@ -16,7 +16,6 @@ import (
 	"github.com/mio256/wplus-server/pkg/test"
 	"github.com/mio256/wplus-server/pkg/ui"
 	"github.com/mio256/wplus-server/pkg/util"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,7 +30,7 @@ func TestGetWorkEntries(t *testing.T) {
 	user, _ := test.CreateUser(t, c, dbConn, nil)
 	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
-	c.Request, err = http.NewRequest("GET", fmt.Sprintf("%s/%d", ui.WorkEntryPath, created.EmployeeID), nil)
+	c.Request, err = http.NewRequest("GET", fmt.Sprintf("%s/employee/%d", ui.WorkEntryPath, created.EmployeeID), nil)
 	require.NoError(t, err)
 	c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	router.ServeHTTP(w, c.Request)
@@ -40,14 +39,20 @@ func TestGetWorkEntries(t *testing.T) {
 	var res []rdb.WorkEntry
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &res))
 	require.NotEmpty(t, res)
-	assert.Equal(t, created.EmployeeID, res[0].EmployeeID)
-	assert.Equal(t, created.WorkplaceID, res[0].WorkplaceID)
-	assert.Equal(t, created.Date, res[0].Date)
-	assert.Equal(t, created.Hours, res[0].Hours)
-	assert.Equal(t, created.StartTime, res[0].StartTime)
-	assert.Equal(t, created.EndTime, res[0].EndTime)
-	assert.Equal(t, created.Attendance, res[0].Attendance)
-	assert.Equal(t, created.Comment, res[0].Comment)
+	require.Equal(t, created.EmployeeID, res[0].EmployeeID)
+	require.Equal(t, created.WorkplaceID, res[0].WorkplaceID)
+	require.Equal(t, created.Date.Time.Format("2006-01-02T15:04:05.000Z"), res[0].Date.Time.Format("2006-01-02T15:04:05.000Z"))
+	if created.Hours.Valid {
+		require.Equal(t, int(created.Hours.Int16), int(res[0].Hours.Int16))
+	} else if created.Attendance.Valid {
+		require.Equal(t, created.Attendance.Bool, res[0].Attendance.Bool)
+	} else {
+		require.Equal(t, time.UnixMicro(created.StartTime.Microseconds).Format("2006-01-02T15:04:05.000Z"), time.UnixMicro(res[0].StartTime.Microseconds).Format("2006-01-02T15:04:05.000Z"))
+		require.Equal(t, time.UnixMicro(created.EndTime.Microseconds).Format("2006-01-02T15:04:05.000Z"), time.UnixMicro(res[0].EndTime.Microseconds).Format("2006-01-02T15:04:05.000Z"))
+	}
+	if created.Comment.Valid {
+		require.Equal(t, created.Comment.String, res[0].Comment.String)
+	}
 }
 
 func TestPostWorkEntry(t *testing.T) {
@@ -63,8 +68,8 @@ func TestPostWorkEntry(t *testing.T) {
 			Hours: rand.Intn(23) + 1,
 		},
 		"time": {
-			StartTime: "1970-01-01T08:00:00.000000Z",
-			EndTime:   "1970-01-01T17:00:00.000000Z",
+			StartTime: "1970-01-01T08:00:00.000Z",
+			EndTime:   "1970-01-01T17:00:00.000Z",
 		},
 		"attendance": {
 			Attendance: true,
@@ -93,7 +98,7 @@ func TestPostWorkEntry(t *testing.T) {
 			}{
 				EmployeeID:  e.ID,
 				WorkplaceID: wp.ID,
-				Date:        "2006-01-02T00:00:00.000000Z",
+				Date:        "2006-01-02T00:00:00.000Z",
 				Hours:       tt.Hours,
 				StartTime:   tt.StartTime,
 				EndTime:     tt.EndTime,
@@ -120,14 +125,14 @@ func TestPostWorkEntry(t *testing.T) {
 			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &res))
 			require.Equal(t, p.EmployeeID, res.EmployeeID)
 			require.Equal(t, p.WorkplaceID, res.WorkplaceID)
-			require.Equal(t, p.Date, res.Date.Time.Format("2006-01-02T15:04:05.000000Z"))
+			require.Equal(t, p.Date, res.Date.Time.Format("2006-01-02T15:04:05.000Z"))
 			if res.Hours.Valid {
 				require.Equal(t, p.Hours, int(res.Hours.Int16))
 			} else if res.Attendance.Valid {
 				require.Equal(t, p.Attendance, res.Attendance.Bool)
 			} else {
-				require.Equal(t, p.StartTime, time.UnixMicro(res.StartTime.Microseconds).In(utc).Format("2006-01-02T15:04:05.000000Z"))
-				require.Equal(t, p.EndTime, time.UnixMicro(res.EndTime.Microseconds).In(utc).Format("2006-01-02T15:04:05.000000Z"))
+				require.Equal(t, p.StartTime, time.UnixMicro(res.StartTime.Microseconds).In(utc).Format("2006-01-02T15:04:05.000Z"))
+				require.Equal(t, p.EndTime, time.UnixMicro(res.EndTime.Microseconds).In(utc).Format("2006-01-02T15:04:05.000Z"))
 			}
 			if res.Comment.Valid {
 				require.Equal(t, p.Comment, res.Comment.String)
