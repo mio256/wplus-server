@@ -49,6 +49,26 @@ func GetWorkEntriesByOffice(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, workEntries)
 }
 
+func GetWorkEntriesByWorkplace(c *gin.Context) {
+	dbConn := c.MustGet("db").(rdb.DBTX)
+	repo := rdb.New(dbConn)
+
+	workplaceID, err := strconv.ParseInt(c.Param("workplace_id"), 10, 64)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	workEntries, err := repo.GetWorkEntriesByWorkplace(c, workplaceID)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, workEntries)
+
+}
+
 func PostWorkEntry(c *gin.Context) {
 	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
