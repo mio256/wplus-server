@@ -13,6 +13,12 @@ from employees
     join workplaces on employees.workplace_id = workplaces.id
 where employees.id = $1 and employees.deleted_at is null;
 
+-- name: GetEmployeeByOffice :one
+select employees.*
+from employees
+join workplaces on employees.workplace_id = workplaces.id
+where workplaces.office_id = $1 and employees.deleted_at is null;
+
 -- name: CreateEmployee :one
 insert into employees (name, workplace_id) values ($1, $2) returning *;
 

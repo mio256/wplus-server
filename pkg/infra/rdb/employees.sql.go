@@ -73,6 +73,27 @@ func (q *Queries) GetEmployeeById(ctx context.Context, id int64) (Employee, erro
 	return i, err
 }
 
+const getEmployeeByOffice = `-- name: GetEmployeeByOffice :one
+select employees.id, employees.name, employees.workplace_id, employees.deleted_at, employees.created_at, employees.updated_at
+from employees
+join workplaces on employees.workplace_id = workplaces.id
+where workplaces.office_id = $1 and employees.deleted_at is null
+`
+
+func (q *Queries) GetEmployeeByOffice(ctx context.Context, officeID int64) (Employee, error) {
+	row := q.db.QueryRow(ctx, getEmployeeByOffice, officeID)
+	var i Employee
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.WorkplaceID,
+		&i.DeletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getEmployeeOffice = `-- name: GetEmployeeOffice :one
 select workplaces.office_id
 from employees
