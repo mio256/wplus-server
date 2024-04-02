@@ -36,6 +36,25 @@ func (q *Queries) CreateWorkplace(ctx context.Context, arg CreateWorkplaceParams
 	return i, err
 }
 
+const getWorkplace = `-- name: GetWorkplace :one
+select id, name, office_id, work_type, deleted_at, created_at, updated_at from workplaces where id = $1 and deleted_at is null
+`
+
+func (q *Queries) GetWorkplace(ctx context.Context, id int64) (Workplace, error) {
+	row := q.db.QueryRow(ctx, getWorkplace, id)
+	var i Workplace
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.OfficeID,
+		&i.WorkType,
+		&i.DeletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getWorkplaces = `-- name: GetWorkplaces :many
 select id, name, office_id, work_type, deleted_at, created_at, updated_at from workplaces where office_id = $1 and deleted_at is null
 `
