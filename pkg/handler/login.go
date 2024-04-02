@@ -5,13 +5,13 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mio256/wplus-server/pkg/infra"
 	"github.com/mio256/wplus-server/pkg/infra/rdb"
 	"github.com/mio256/wplus-server/pkg/util"
+	"github.com/taxio/errors"
 )
 
 func PostLogin(c *gin.Context) {
-	dbConn := infra.ConnectDB(c)
+	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
 	var input struct {
@@ -31,38 +31,33 @@ func PostLogin(c *gin.Context) {
 		ID:       int64(input.UserID),
 	})
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "User not found",
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "Unauthorized",
 		})
 		return
 	}
 
 	if err = util.CompareHashAndPassword(user.Password, input.Password); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Invalid password",
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "Unauthorized",
 		})
 		return
 	}
 
 	token, err := util.GenerateToken(uint64(user.ID))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Failed to generate token",
-		})
+		c.Error(errors.Wrap(err))
 		return
 	}
 
-	// TODO: return NULL if !user.EmployeeID.Valid
-	workplaceID := 0
+	var workplaceID int64
 	if user.EmployeeID.Valid {
 		employee, err := repo.GetEmployeeById(c, user.EmployeeID.Int64)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"message": "Employee not found",
-			})
+			c.Error(errors.Wrap(err))
 			return
 		}
-		workplaceID = int(employee.WorkplaceID)
+		workplaceID = employee.WorkplaceID
 	}
 
 	domain := os.Getenv("DOMAIN")
