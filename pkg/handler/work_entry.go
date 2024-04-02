@@ -92,6 +92,11 @@ func PostWorkEntry(c *gin.Context) {
 
 	p.EmployeeID = input.EmployeeID
 	p.WorkplaceID = input.WorkplaceID
+	wp, err := repo.GetWorkplace(c, p.WorkplaceID)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
 	date, err := time.Parse("2006-01-02T15:04:05.000Z", input.Date)
 	if err != nil {
 		c.Error(errors.Wrap(err))
@@ -102,17 +107,17 @@ func PostWorkEntry(c *gin.Context) {
 		Valid: true,
 	}
 
-	if input.Attendance {
+	if input.Attendance && wp.WorkType == rdb.WorkTypeAttendance {
 		p.Attendance = pgtype.Bool{
 			Bool:  true,
 			Valid: true,
 		}
-	} else if input.Hours > 0 {
+	} else if input.Hours > 0 && wp.WorkType == rdb.WorkTypeHours {
 		p.Hours = pgtype.Int2{
 			Int16: int16(input.Hours),
 			Valid: true,
 		}
-	} else {
+	} else if input.StartTime != "" && input.EndTime != "" && wp.WorkType == rdb.WorkTypeTime {
 		startTime, err := time.Parse("2006-01-02T15:04:05.000Z", input.StartTime)
 		if err != nil {
 			c.Error(errors.Wrap(err))
@@ -139,6 +144,11 @@ func PostWorkEntry(c *gin.Context) {
 			c.Error(errors.Wrap(err))
 			return
 		}
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid input",
+		})
+		return
 	}
 
 	if p.Comment.Valid {

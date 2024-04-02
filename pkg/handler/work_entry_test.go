@@ -59,19 +59,23 @@ func TestPostWorkEntry(t *testing.T) {
 	router := ui.SetupRouter()
 
 	tests := map[string]struct {
+		WorkType   rdb.WorkType
 		Hours      int
 		StartTime  string
 		EndTime    string
 		Attendance bool
 	}{
 		"hours": {
-			Hours: rand.Intn(23) + 1,
+			WorkType: rdb.WorkTypeHours,
+			Hours:    rand.Intn(23) + 1,
 		},
 		"time": {
+			WorkType:  rdb.WorkTypeTime,
 			StartTime: "1970-01-01T08:00:00.000Z",
 			EndTime:   "1970-01-01T17:00:00.000Z",
 		},
 		"attendance": {
+			WorkType:   rdb.WorkTypeAttendance,
 			Attendance: true,
 		},
 	}
@@ -83,7 +87,9 @@ func TestPostWorkEntry(t *testing.T) {
 			c, _ := gin.CreateTestContext(w)
 			dbConn := infra.ConnectDB(c)
 
-			wp := test.CreateWorkplace(t, c, dbConn, nil)
+			wp := test.CreateWorkplace(t, c, dbConn, func(v *rdb.Workplace) {
+				v.WorkType = tt.WorkType
+			})
 			e := test.CreateEmployee(t, c, dbConn, nil)
 
 			var p = struct {
