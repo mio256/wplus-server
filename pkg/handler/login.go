@@ -52,7 +52,7 @@ func PostLogin(c *gin.Context) {
 
 	var workplaceID int64
 	if user.EmployeeID.Valid {
-		employee, err := repo.GetEmployeeById(c, user.EmployeeID.Int64)
+		employee, err := repo.GetEmployee(c, user.EmployeeID.Int64)
 		if err != nil {
 			c.Error(errors.Wrap(err))
 			return
