@@ -52,19 +52,21 @@ func SetupRouter() *gin.Engine {
 	p.POST(OfficePath, handler.PostOffice)
 	p.DELETE(OfficePath+"/:id", handler.DeleteOffice)
 	// workplace
-	p.GET(WorkplacePath+"/:office_id", handler.GetWorkplaces)
+	p.GET(WorkplacePath+"/office/:office_id", handler.GetWorkplaces)
+	p.GET(WorkplacePath+"/:id", handler.GetWorkplace)
 	p.POST(WorkplacePath, handler.PostWorkplace)
 	p.DELETE(WorkplacePath+"/:id", handler.DeleteWorkplace)
 	// employee
-	p.GET(EmployeePath+"/:workplace_id", handler.GetEmployees)
-	p.GET(EmployeePath+"/:workplace_id/:id", handler.GetEmployee)
+	p.GET(EmployeePath+"/office/:office_id", handler.GetEmployeesByOffice)
+	p.GET(EmployeePath+"/workplace/:workplace_id", handler.GetEmployees)
+	p.GET(EmployeePath+"/:id", handler.GetEmployee)
 	p.POST(EmployeePath, handler.PostEmployee)
 	p.PUT(EmployeePath+"/:id", handler.ChangeEmployeeWorkplace)
 	p.DELETE(EmployeePath+"/:id", handler.DeleteEmployee)
 	// work_entry
-	p.GET(WorkEntryPath+"/employee/:employee_id", handler.GetWorkEntries)
 	p.GET(WorkEntryPath+"/office/:office_id", handler.GetWorkEntriesByOffice)
-	p.GET(WorkEntryPath+"/workplace/:office_id", handler.GetWorkEntriesByWorkplace)
+	p.GET(WorkEntryPath+"/workplace/:workplace_id", handler.GetWorkEntriesByWorkplace)
+	p.GET(WorkEntryPath+"/employee/:employee_id", handler.GetWorkEntries)
 	p.POST(WorkEntryPath, handler.PostWorkEntry)
 	p.DELETE(WorkEntryPath+"/:id", handler.DeleteWorkEntry)
 
