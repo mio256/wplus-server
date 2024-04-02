@@ -9,6 +9,25 @@ import (
 	"github.com/taxio/errors"
 )
 
+func GetEmployeesByOffice(c *gin.Context) {
+	dbConn := c.MustGet("db").(rdb.DBTX)
+	repo := rdb.New(dbConn)
+
+	officeID, err := strconv.ParseInt(c.Param("office_id"), 10, 64)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	employees, err := repo.GetEmployeesByOffice(c, officeID)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, employees)
+}
+
 func GetEmployees(c *gin.Context) {
 	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
@@ -32,22 +51,13 @@ func GetEmployee(c *gin.Context) {
 	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
-	workplaceID, err := strconv.ParseInt(c.Param("workplace_id"), 10, 64)
-	if err != nil {
-		c.Error(errors.Wrap(err))
-		return
-	}
-
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.Error(errors.Wrap(err))
 		return
 	}
 
-	employee, err := repo.GetEmployee(c, rdb.GetEmployeeParams{
-		WorkplaceID: workplaceID,
-		ID:          id,
-	})
+	employee, err := repo.GetEmployee(c, id)
 	if err != nil {
 		c.Error(errors.Wrap(err))
 		return
@@ -102,10 +112,7 @@ func ChangeEmployeeWorkplace(c *gin.Context) {
 		return
 	}
 
-	employee, err := repo.GetEmployee(c, rdb.GetEmployeeParams{
-		ID:          id,
-		WorkplaceID: input.WorkplaceID,
-	})
+	employee, err := repo.GetEmployee(c, id)
 	if err != nil {
 		c.Error(errors.Wrap(err))
 		return
