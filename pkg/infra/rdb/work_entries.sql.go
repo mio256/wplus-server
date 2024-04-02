@@ -95,7 +95,7 @@ func (q *Queries) GetWorkEntriesByEmployee(ctx context.Context, employeeID int64
 }
 
 const getWorkEntriesByOffice = `-- name: GetWorkEntriesByOffice :many
-select work_entries.id, workplaces.name, employees.name, work_entries.date, work_entries.start_time, work_entries.end_time, work_entries.comment
+select workplaces.name as workplace_name, employees.name as employee_name, work_entries.id, work_entries.employee_id, work_entries.workplace_id, work_entries.date, work_entries.hours, work_entries.start_time, work_entries.end_time, work_entries.attendance, work_entries.comment, work_entries.deleted_at, work_entries.created_at, work_entries.updated_at
 from work_entries
 join employees on work_entries.employee_id = employees.id
 join workplaces on work_entries.workplace_id = workplaces.id
@@ -104,13 +104,20 @@ where offices.id = $1 and work_entries.deleted_at is null
 `
 
 type GetWorkEntriesByOfficeRow struct {
-	ID        int64       `json:"id"`
-	Name      string      `json:"name"`
-	Name_2    string      `json:"name_2"`
-	Date      pgtype.Date `json:"date"`
-	StartTime pgtype.Time `json:"start_time"`
-	EndTime   pgtype.Time `json:"end_time"`
-	Comment   pgtype.Text `json:"comment"`
+	WorkplaceName string           `json:"workplace_name"`
+	EmployeeName  string           `json:"employee_name"`
+	ID            int64            `json:"id"`
+	EmployeeID    int64            `json:"employee_id"`
+	WorkplaceID   int64            `json:"workplace_id"`
+	Date          pgtype.Date      `json:"date"`
+	Hours         pgtype.Int2      `json:"hours"`
+	StartTime     pgtype.Time      `json:"start_time"`
+	EndTime       pgtype.Time      `json:"end_time"`
+	Attendance    pgtype.Bool      `json:"attendance"`
+	Comment       pgtype.Text      `json:"comment"`
+	DeletedAt     pgtype.Timestamp `json:"deleted_at"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
 }
 
 func (q *Queries) GetWorkEntriesByOffice(ctx context.Context, id int64) ([]GetWorkEntriesByOfficeRow, error) {
@@ -123,13 +130,20 @@ func (q *Queries) GetWorkEntriesByOffice(ctx context.Context, id int64) ([]GetWo
 	for rows.Next() {
 		var i GetWorkEntriesByOfficeRow
 		if err := rows.Scan(
+			&i.WorkplaceName,
+			&i.EmployeeName,
 			&i.ID,
-			&i.Name,
-			&i.Name_2,
+			&i.EmployeeID,
+			&i.WorkplaceID,
 			&i.Date,
+			&i.Hours,
 			&i.StartTime,
 			&i.EndTime,
+			&i.Attendance,
 			&i.Comment,
+			&i.DeletedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}

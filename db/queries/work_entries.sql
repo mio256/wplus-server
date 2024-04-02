@@ -2,7 +2,7 @@
 select * from work_entries where employee_id = $1 and deleted_at is null;
 
 -- name: GetWorkEntriesByOffice :many
-select work_entries.id, workplaces.name, employees.name, work_entries.date, work_entries.start_time, work_entries.end_time, work_entries.comment
+select workplaces.name as workplace_name, employees.name as employee_name, work_entries.*
 from work_entries
 join employees on work_entries.employee_id = employees.id
 join workplaces on work_entries.workplace_id = workplaces.id
