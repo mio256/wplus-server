@@ -9,6 +9,26 @@ import (
 	"github.com/taxio/errors"
 )
 
+func GetWorkplace(c *gin.Context) {
+	dbConn := c.MustGet("db").(rdb.DBTX)
+	repo := rdb.New(dbConn)
+
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	workplace, err := repo.GetWorkplace(c, id)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, workplace)
+
+}
+
 func GetWorkplaces(c *gin.Context) {
 	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)

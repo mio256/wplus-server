@@ -19,6 +19,31 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestGetWorkplace(t *testing.T) {
+	router := ui.SetupRouter()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	dbConn := infra.ConnectDB(c)
+
+	created := test.CreateWorkplace(t, c, dbConn, nil)
+
+	user, _ := test.CreateUser(t, c, dbConn, nil)
+	token, err := util.GenerateToken(uint64(user.ID))
+	require.NoError(t, err)
+	c.Request, err = http.NewRequest("GET", fmt.Sprintf("%s/%d", ui.WorkplacePath, created.ID), nil)
+	require.NoError(t, err)
+	c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	router.ServeHTTP(w, c.Request)
+
+	assert.Equal(t, 200, w.Code)
+	var res rdb.Workplace
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &res))
+	assert.Equal(t, created.Name, res.Name)
+	assert.Equal(t, created.OfficeID, res.OfficeID)
+	assert.Equal(t, created.WorkType, res.WorkType)
+
+}
+
 func TestGetWorkplaces(t *testing.T) {
 	router := ui.SetupRouter()
 	w := httptest.NewRecorder()
@@ -33,7 +58,7 @@ func TestGetWorkplaces(t *testing.T) {
 	user, _ := test.CreateUser(t, c, dbConn, nil)
 	token, err := util.GenerateToken(uint64(user.ID))
 	require.NoError(t, err)
-	c.Request, err = http.NewRequest("GET", fmt.Sprintf("%s/%d", ui.WorkplacePath, o.ID), nil)
+	c.Request, err = http.NewRequest("GET", fmt.Sprintf("%s/office/%d", ui.WorkplacePath, o.ID), nil)
 	require.NoError(t, err)
 	c.Request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	router.ServeHTTP(w, c.Request)
