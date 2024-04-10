@@ -238,6 +238,30 @@ func (q *Queries) GetWorkEntriesByWorkplace(ctx context.Context, id int64) ([]Ge
 	return items, nil
 }
 
+const getWorkEntry = `-- name: GetWorkEntry :one
+select id, employee_id, workplace_id, date, hours, start_time, end_time, attendance, comment, deleted_at, created_at, updated_at from work_entries where id = $1 and deleted_at is null
+`
+
+func (q *Queries) GetWorkEntry(ctx context.Context, id int64) (WorkEntry, error) {
+	row := q.db.QueryRow(ctx, getWorkEntry, id)
+	var i WorkEntry
+	err := row.Scan(
+		&i.ID,
+		&i.EmployeeID,
+		&i.WorkplaceID,
+		&i.Date,
+		&i.Hours,
+		&i.StartTime,
+		&i.EndTime,
+		&i.Attendance,
+		&i.Comment,
+		&i.DeletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const softDeleteWorkEntriesByEmployee = `-- name: SoftDeleteWorkEntriesByEmployee :exec
 update work_entries set deleted_at = now() where employee_id = $1 and deleted_at is null
 `

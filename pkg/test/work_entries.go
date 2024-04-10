@@ -52,10 +52,10 @@ func CreateWorkEntries(t *testing.T, ctx context.Context, db rdb.DBTX, f func(v 
 	return &created
 }
 
-func CheckDeletedWorkEntry(t *testing.T, ctx context.Context, db rdb.DBTX, id int64) time.Time {
+func GetDeletedAtWorkEntry(t *testing.T, ctx context.Context, db rdb.DBTX, id int64) time.Time {
 	t.Helper()
 
-	deletedAt, err := rdb.New(db).TestCheckDeletedWorkEntry(ctx, id)
+	deletedAt, err := rdb.New(db).TestGetDeletedAtWorkEntry(ctx, id)
 	require.NoError(t, err)
 	require.Equal(t, true, deletedAt.Valid)
 

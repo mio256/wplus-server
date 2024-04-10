@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mio256/wplus-server/pkg/infra/rdb"
+	"github.com/mio256/wplus-server/pkg/util"
 	"github.com/taxio/errors"
 )
 
@@ -13,13 +14,9 @@ func GetEmployeesByOffice(c *gin.Context) {
 	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
-	officeID, err := strconv.ParseInt(c.Param("office_id"), 10, 64)
-	if err != nil {
-		c.Error(errors.Wrap(err))
-		return
-	}
+	user := c.MustGet("user").(*util.UserClaims)
 
-	employees, err := repo.GetEmployeesByOffice(c, officeID)
+	employees, err := repo.GetEmployeesByOffice(c, int64(user.OfficeID))
 	if err != nil {
 		c.Error(errors.Wrap(err))
 		return
@@ -32,9 +29,24 @@ func GetEmployees(c *gin.Context) {
 	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
+	user := c.MustGet("user").(*util.UserClaims)
+
 	workplaceID, err := strconv.ParseInt(c.Param("workplace_id"), 10, 64)
 	if err != nil {
 		c.Error(errors.Wrap(err))
+		return
+	}
+
+	workplace, err := repo.GetWorkplace(c, workplaceID)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	if workplace.OfficeID != int64(user.OfficeID) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "your office is different",
+		})
 		return
 	}
 
@@ -51,9 +63,23 @@ func GetEmployee(c *gin.Context) {
 	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
+	user := c.MustGet("user").(*util.UserClaims)
+
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.Error(errors.Wrap(err))
+		return
+	}
+
+	employeeOfficeID, err := repo.GetEmployeeOffice(c, id)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+	if employeeOfficeID != int64(user.OfficeID) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "your office is different",
+		})
 		return
 	}
 
@@ -71,9 +97,26 @@ func PostEmployee(c *gin.Context) {
 	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
+	user := c.MustGet("user").(*util.UserClaims)
+
+	if user.Role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "you are not admin",
+		})
+		return
+	}
+
 	var input rdb.CreateEmployeeParams
 	if err := c.BindJSON(&input); err != nil {
 		c.Error(errors.Wrap(err))
+		return
+	}
+
+	workplace, err := repo.GetWorkplace(c, input.WorkplaceID)
+	if workplace.OfficeID != int64(user.OfficeID) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "your office is different",
+		})
 		return
 	}
 
@@ -90,9 +133,29 @@ func ChangeEmployeeWorkplace(c *gin.Context) {
 	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
+	user := c.MustGet("user").(*util.UserClaims)
+
+	if user.Role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "you are not admin",
+		})
+		return
+	}
+
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.Error(errors.Wrap(err))
+		return
+	}
+	officeID, err := repo.GetEmployeeOffice(c, id)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+	if officeID != int64(user.OfficeID) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "this employee is not in your office",
+		})
 		return
 	}
 
@@ -101,6 +164,18 @@ func ChangeEmployeeWorkplace(c *gin.Context) {
 	}
 	if err := c.BindJSON(&input); err != nil {
 		c.Error(errors.Wrap(err))
+		return
+	}
+
+	workplace, err := repo.GetWorkplace(c, input.WorkplaceID)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+	if workplace.OfficeID != int64(user.OfficeID) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "your office is different",
+		})
 		return
 	}
 
@@ -125,9 +200,29 @@ func DeleteEmployee(c *gin.Context) {
 	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
+	user := c.MustGet("user").(*util.UserClaims)
+	if user.Role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "you are not admin",
+		})
+		return
+	}
+
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.Error(errors.Wrap(err))
+		return
+	}
+
+	employeeOfficeID, err := repo.GetEmployeeOffice(c, id)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+	if employeeOfficeID != int64(user.OfficeID) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "your office is different",
+		})
 		return
 	}
 

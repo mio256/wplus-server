@@ -52,8 +52,7 @@ func (q *Queries) GetEmployee(ctx context.Context, id int64) (Employee, error) {
 
 const getEmployeeOffice = `-- name: GetEmployeeOffice :one
 select workplaces.office_id
-from employees
-         join workplaces on employees.workplace_id = workplaces.id
+from employees join workplaces on employees.workplace_id = workplaces.id
 where employees.id = $1 and employees.deleted_at is null
 `
 

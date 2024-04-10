@@ -1,4 +1,6 @@
 import os
+import base64
+import json
 import requests
 
 # 環境変数から基本URLを取得
@@ -8,7 +10,7 @@ headers = {'Content-Type': 'application/json'}
 
 def ping_server():
     """サーバーの生存確認を行う"""
-    response = requests.get(f'{base_url}/ping', headers=headers)
+    response = requests.get(f'{base_url}/ping/', headers=headers)
     if response.ok:
         print('ping: ', response.json())
     else:
@@ -17,7 +19,7 @@ def ping_server():
 
 def ping_database():
     """データベースの生存確認を行う"""
-    response = requests.get(f'{base_url}/db-ping', headers=headers)
+    response = requests.get(f'{base_url}/db-ping/', headers=headers)
     if response.ok:
         print('db-ping: ', response.json())
     else:
@@ -31,28 +33,32 @@ def login():
         'user_id': int(input('user_id: ')),
         'password': input('password: ')
     }
-    response = requests.post(f'{base_url}/login', headers=headers, json=data)
+    response = requests.post(f'{base_url}/login/', headers=headers, json=data)
     if response.ok:
         print('login: ', response.json(), response.cookies.get('token'))
-        return response.cookies.get('token'), response.json()
+        return response.cookies.get('token')
     else:
         print('Login failed')
-        return None, None
+        return None
 
 
 def get_workplace(workplace_id):
-    return requests.get(base_url + f'/workplaces/{workplace_id}', headers=headers).json()
+    r = requests.get(base_url + f'/workplaces/{workplace_id}/', headers=headers)
+    return r.json()
 
 
 def get_employees(role, id):
     # role = 'admin', 'manager', 'employee'
     # id = office_id, workplace_id, employee_id
     if role == 'admin':
-        r = requests.get(base_url + f'/employees/office/{id}', headers=headers)
+        r = requests.get(base_url + f'/employees/', headers=headers)
     elif role == 'manager':
-        r = requests.get(base_url + f'/employees/workplace/{id}', headers=headers)
+        r = requests.get(base_url + f'/employees/workplace/{id}/', headers=headers)
     elif role == 'employee':
-        r = requests.get(base_url + f'/employees/{id}', headers=headers)
+        r = requests.get(base_url + f'/employees/{id}/', headers=headers)
+    if r.json() == None:
+        print('No employees found')
+        return
     return r.json()
 
 
@@ -91,11 +97,11 @@ def get_work_entries(role, id):
     # role = 'admin', 'manager', 'employee'
     # id = office_id, workplace_id, employee_id
     if role == 'admin':
-        r = requests.get(base_url + f'/work_entries/office/{id}', headers=headers)
+        r = requests.get(base_url + f'/work_entries/', headers=headers)
     elif role == 'manager':
-        r = requests.get(base_url + f'/work_entries/workplace/{id}', headers=headers)
+        r = requests.get(base_url + f'/work_entries/workplace/{id}/', headers=headers)
     elif role == 'employee':
-        r = requests.get(base_url + f'/work_entries/employee/{id}', headers=headers)
+        r = requests.get(base_url + f'/work_entries/employee/{id}/', headers=headers)
     return r.json()
 
 
@@ -103,74 +109,79 @@ def main():
     ping_server()
     ping_database()
 
-    token, login_res = login()
+    token = login()
 
-    # tokenとlogin_resがNoneでない場合、ログイン成功
-    if token and login_res:
-        # Tokenをヘッダーに追加
-        headers['Authorization'] = 'Bearer ' + token
+    # tokenが取得できなかった場合、終了
+    if not token:
+        return
 
-        # ログインレスポンスからroleを取得
-        role = login_res['role']
-        print('your role: ', role)
+    # Tokenをヘッダーに追加
+    headers['Authorization'] = 'Bearer ' + token
 
-        # yesならば、勤怠登録画面
-        # noならば、勤怠一覧画面
-        post = bool(input('post work_entry? (y/n): ') == 'y')
+    # JWTTokenをParse
+    tmp = token.split('.')
+    header = json.loads(base64.b64decode(tmp[0]).decode())
+    payload = json.loads(base64.b64decode(tmp[1]).decode())
+    print(header, payload)
 
-        if role == 'admin':
-            office_id = login_res['office_id']
-            workplace_id = None
-            # adminはworkplace_idがNullなので注意 (office:workplace = 1:N)
-            if post:
-                # 管理者はOffice全体から対象のEmployeeを選択して勤怠登録
+    name = payload['name']
+    office_id = payload['office_id']
+    user_id = payload['user_id']
+    role = payload['role']
+    # role == 'admin'の場合、employee_idとworkplace_idが0
+    workplace_id = payload['workplace_id']
+    employee_id = payload['employee_id']
 
-                # 従業員一覧
-                employees = get_employees(role, office_id)
-                for _, employee in enumerate(employees):
-                    print(employee)
+    # yesならば、勤怠登録画面
+    # noならば、勤怠一覧画面
+    post = bool(input('post work_entry? (y/n): ') == 'y')
 
-                # 従業員のIDを選択
-                employee_id = int(input('employee_id: '))
-                # 指定させたemployeeからworkplace_idを取得する
-                for _, employee in enumerate(employees):
-                    if employee['id'] == employee_id:
-                        workplace_id = employee['workplace_id']
+    if role == 'admin':
+        # adminはworkplace_idがNullなので注意 (office:workplace = 1:N)
+        if post:
+            # 管理者はOffice全体から対象のEmployeeを選択して勤怠登録
 
-                print(post_work_entry(employee_id, workplace_id))
-            else:
-                # 管理者はOffice全体の勤怠一覧を表示
-                print(get_work_entries(role, office_id))
-        elif role == 'manager':
-            office_id = login_res['office_id']
-            workplace_id = login_res['workplace_id']
-            if post:
-                # マネージャーは自分のWorkplaceのEmployeeを選択して勤怠登録
+            # 従業員一覧
+            employees = get_employees(role, office_id)
+            for _, employee in enumerate(employees):
+                print(employee)
 
-                # 従業員一覧
-                employees = get_employees(role, workplace_id)
-                print(employees)
+            # 従業員のIDを選択
+            employee_id = int(input('employee_id: '))
+            # 指定させたemployeeからworkplace_idを取得する
+            for _, employee in enumerate(employees):
+                if employee['id'] == employee_id:
+                    workplace_id = employee['workplace_id']
 
-                # 従業員のIDを選択
-                employee_id = int(input('employee_id: '))
+            print(post_work_entry(employee_id, workplace_id))
+        else:
+            # 管理者はOffice全体の勤怠一覧を表示
+            print(get_work_entries(role, office_id))
+    elif role == 'manager':
+        if post:
+            # マネージャーは自分のWorkplaceのEmployeeを選択して勤怠登録
 
-                # managerは自分のworkplace_idを使う
-                print(post_work_entry(employee_id, workplace_id))
-            else:
-                # マネージャーは自分のWorkplaceの勤怠一覧を表示
-                print(get_work_entries(role, workplace_id))
-        elif role == 'employee':
-            office_id = login_res['office_id']
-            workplace_id = login_res['workplace_id']
-            employee_id = login_res['employee_id']
-            if post:
-                # 従業員は自分の勤怠登録
-                # employee は 画面表示用の情報として取得、employee.nameなど
-                employee = get_employees(role, employee_id)
-                print(post_work_entry(employee_id, workplace_id))
-            else:
-                # 従業員は自分の勤怠一覧を表示
-                print(get_work_entries(role, employee_id))
+            # 従業員一覧
+            employees = get_employees(role, workplace_id)
+            print(employees)
+
+            # 従業員のIDを選択
+            employee_id = int(input('employee_id: '))
+
+            # managerは自分のworkplace_idを使う
+            print(post_work_entry(employee_id, workplace_id))
+        else:
+            # マネージャーは自分のWorkplaceの勤怠一覧を表示
+            print(get_work_entries(role, workplace_id))
+    elif role == 'employee':
+        if post:
+            # 従業員は自分の勤怠登録
+            # employee は 画面表示用の情報として取得、employee.nameなど
+            employee = get_employees(role, employee_id)
+            print(post_work_entry(employee_id, workplace_id))
+        else:
+            # 従業員は自分の勤怠一覧を表示
+            print(get_work_entries(role, employee_id))
 
 
 if __name__ == "__main__":
