@@ -2,6 +2,7 @@ import os
 import base64
 import json
 import requests
+import jwt
 
 # 環境変数から基本URLを取得
 base_url = os.environ['BASE_URL']
@@ -121,7 +122,7 @@ def main():
     # JWTTokenをParse
     tmp = token.split('.')
     header = json.loads(base64.b64decode(tmp[0]).decode())
-    payload = json.loads(base64.b64decode(tmp[1]).decode())
+    payload = jwt.decode(token, options={"verify_signature": False})
     print(header, payload)
 
     name = payload['name']
