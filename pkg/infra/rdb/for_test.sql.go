@@ -20,50 +20,6 @@ func (q *Queries) Ping(ctx context.Context) error {
 	return err
 }
 
-const testCheckDeletedEmployee = `-- name: TestCheckDeletedEmployee :one
-select deleted_at from employees where id = $1
-`
-
-func (q *Queries) TestCheckDeletedEmployee(ctx context.Context, id int64) (pgtype.Timestamp, error) {
-	row := q.db.QueryRow(ctx, testCheckDeletedEmployee, id)
-	var deleted_at pgtype.Timestamp
-	err := row.Scan(&deleted_at)
-	return deleted_at, err
-}
-
-const testCheckDeletedOffice = `-- name: TestCheckDeletedOffice :one
-select deleted_at from offices where id = $1
-`
-
-func (q *Queries) TestCheckDeletedOffice(ctx context.Context, id int64) (pgtype.Timestamp, error) {
-	row := q.db.QueryRow(ctx, testCheckDeletedOffice, id)
-	var deleted_at pgtype.Timestamp
-	err := row.Scan(&deleted_at)
-	return deleted_at, err
-}
-
-const testCheckDeletedWorkEntry = `-- name: TestCheckDeletedWorkEntry :one
-select deleted_at from work_entries where id = $1
-`
-
-func (q *Queries) TestCheckDeletedWorkEntry(ctx context.Context, id int64) (pgtype.Timestamp, error) {
-	row := q.db.QueryRow(ctx, testCheckDeletedWorkEntry, id)
-	var deleted_at pgtype.Timestamp
-	err := row.Scan(&deleted_at)
-	return deleted_at, err
-}
-
-const testCheckDeletedWorkplace = `-- name: TestCheckDeletedWorkplace :one
-select deleted_at from workplaces where id = $1
-`
-
-func (q *Queries) TestCheckDeletedWorkplace(ctx context.Context, id int64) (pgtype.Timestamp, error) {
-	row := q.db.QueryRow(ctx, testCheckDeletedWorkplace, id)
-	var deleted_at pgtype.Timestamp
-	err := row.Scan(&deleted_at)
-	return deleted_at, err
-}
-
 const testCreateEmployee = `-- name: TestCreateEmployee :one
 insert into employees (name, workplace_id) values ($1, $2) returning id, name, workplace_id, deleted_at, created_at, updated_at
 `
@@ -256,4 +212,66 @@ delete from workplaces where id = $1
 func (q *Queries) TestDeleteWorkplace(ctx context.Context, id int64) error {
 	_, err := q.db.Exec(ctx, testDeleteWorkplace, id)
 	return err
+}
+
+const testGetDeletedAtEmployee = `-- name: TestGetDeletedAtEmployee :one
+select deleted_at from employees where id = $1
+`
+
+func (q *Queries) TestGetDeletedAtEmployee(ctx context.Context, id int64) (pgtype.Timestamp, error) {
+	row := q.db.QueryRow(ctx, testGetDeletedAtEmployee, id)
+	var deleted_at pgtype.Timestamp
+	err := row.Scan(&deleted_at)
+	return deleted_at, err
+}
+
+const testGetDeletedAtOffice = `-- name: TestGetDeletedAtOffice :one
+select deleted_at from offices where id = $1
+`
+
+func (q *Queries) TestGetDeletedAtOffice(ctx context.Context, id int64) (pgtype.Timestamp, error) {
+	row := q.db.QueryRow(ctx, testGetDeletedAtOffice, id)
+	var deleted_at pgtype.Timestamp
+	err := row.Scan(&deleted_at)
+	return deleted_at, err
+}
+
+const testGetDeletedAtWorkEntry = `-- name: TestGetDeletedAtWorkEntry :one
+select deleted_at from work_entries where id = $1
+`
+
+func (q *Queries) TestGetDeletedAtWorkEntry(ctx context.Context, id int64) (pgtype.Timestamp, error) {
+	row := q.db.QueryRow(ctx, testGetDeletedAtWorkEntry, id)
+	var deleted_at pgtype.Timestamp
+	err := row.Scan(&deleted_at)
+	return deleted_at, err
+}
+
+const testGetDeletedAtWorkplace = `-- name: TestGetDeletedAtWorkplace :one
+select deleted_at from workplaces where id = $1
+`
+
+func (q *Queries) TestGetDeletedAtWorkplace(ctx context.Context, id int64) (pgtype.Timestamp, error) {
+	row := q.db.QueryRow(ctx, testGetDeletedAtWorkplace, id)
+	var deleted_at pgtype.Timestamp
+	err := row.Scan(&deleted_at)
+	return deleted_at, err
+}
+
+const testGetEmployee = `-- name: TestGetEmployee :one
+select id, name, workplace_id, deleted_at, created_at, updated_at from employees where id = $1 and deleted_at is null
+`
+
+func (q *Queries) TestGetEmployee(ctx context.Context, id int64) (Employee, error) {
+	row := q.db.QueryRow(ctx, testGetEmployee, id)
+	var i Employee
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.WorkplaceID,
+		&i.DeletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

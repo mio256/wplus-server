@@ -1,3 +1,6 @@
+-- name: GetWorkEntry :one
+select * from work_entries where id = $1 and deleted_at is null;
+
 -- name: GetWorkEntriesByEmployee :many
 select workplaces.name as workplace_name, employees.name as employee_name, work_entries.*
 from work_entries

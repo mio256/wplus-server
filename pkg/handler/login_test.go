@@ -30,12 +30,12 @@ func TestLogin(t *testing.T) {
 			Role:           rdb.UserTypeAdmin,
 			WantEmployeeID: false,
 		},
-		"employee": {
-			Role:           rdb.UserTypeEmployee,
-			WantEmployeeID: true,
-		},
 		"manager": {
 			Role:           rdb.UserTypeManager,
+			WantEmployeeID: true,
+		},
+		"employee": {
+			Role:           rdb.UserTypeEmployee,
 			WantEmployeeID: true,
 		},
 	}
@@ -50,7 +50,7 @@ func TestLogin(t *testing.T) {
 			employee := test.CreateEmployee(t, c, dbConn, nil)
 			user, plain := test.CreateUser(t, c, dbConn, func(v *rdb.User) {
 				v.Role = tt.Role
-				if tt.Role != rdb.UserTypeAdmin {
+				if tt.WantEmployeeID {
 					require.True(t, tt.WantEmployeeID)
 					v.EmployeeID = pgtype.Int8{Int64: employee.ID, Valid: true}
 				}
@@ -82,29 +82,7 @@ func TestLogin(t *testing.T) {
 			c.Request, _ = http.NewRequest("POST", ui.LoginPath, body)
 			router.ServeHTTP(w, c.Request)
 
-			assert.Equal(t, 200, w.Code)
-			var res struct {
-				OfficeID    uint64 `json:"office_id"`
-				UserID      uint64 `json:"user_id"`
-				Name        string `json:"name"`
-				WorkplaceID int64  `json:"workplace_id"`
-				Role        string `json:"role"`
-				EmployeeID  uint64 `json:"employee_id"`
-			}
-			t.Log(w.Body.Bytes())
-			t.Log(json.Unmarshal(w.Body.Bytes(), &res))
-			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &res))
-			assert.Equal(t, p.OfficeID, res.OfficeID)
-			assert.Equal(t, p.UserID, res.UserID)
-			assert.Equal(t, user.Name, res.Name)
-			assert.Equal(t, user.Role, rdb.UserType(res.Role))
-			if tt.WantEmployeeID {
-				assert.Equal(t, employee.ID, int64(res.EmployeeID))
-				assert.Equal(t, employee.WorkplaceID, res.WorkplaceID)
-			} else {
-				assert.Empty(t, res.EmployeeID)
-				assert.Empty(t, res.WorkplaceID)
-			}
+			assert.Equal(t, http.StatusOK, w.Code)
 
 			cookie := w.Header().Get("Set-Cookie")
 			re := regexp.MustCompile(`token=([^;]+)`)
@@ -112,9 +90,22 @@ func TestLogin(t *testing.T) {
 			require.Equal(t, 2, len(matches))
 			token := matches[1]
 
+			t.Log(token)
+
 			// NOTE: time.Now().Unix() を使っているため、同時刻に実行すると token が同じになる
-			token2, err := util.GenerateToken(uint64(user.ID))
+			userClaims := util.UserClaims{
+				UserID:   uint64(user.ID),
+				OfficeID: uint64(user.OfficeID),
+				Name:     user.Name,
+				Role:     string(user.Role),
+			}
+			if tt.WantEmployeeID {
+				userClaims.WorkplaceID = uint64(employee.WorkplaceID)
+				userClaims.EmployeeID = uint64(employee.ID)
+			}
+			token2, err := util.GenerateToken(userClaims)
 			require.NoError(t, err)
+			// NOTE: tokenが一致しているので、すべてのパラメータが同一である
 			assert.Equal(t, token, token2)
 		})
 	}

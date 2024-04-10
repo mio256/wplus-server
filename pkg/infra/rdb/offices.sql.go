@@ -56,6 +56,23 @@ func (q *Queries) CreateOffice(ctx context.Context, name string) (Office, error)
 	return i, err
 }
 
+const getOffice = `-- name: GetOffice :one
+select id, name, deleted_at, created_at, updated_at from offices where id = $1 and deleted_at is null
+`
+
+func (q *Queries) GetOffice(ctx context.Context, id int64) (Office, error) {
+	row := q.db.QueryRow(ctx, getOffice, id)
+	var i Office
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.DeletedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const softDeleteOffice = `-- name: SoftDeleteOffice :exec
 update offices set deleted_at = now() where id = $1
 `

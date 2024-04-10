@@ -7,7 +7,7 @@ insert into offices (name) values ($1) returning *;
 -- name: TestDeleteOffice :exec
 delete from offices where id = $1;
 
--- name: TestCheckDeletedOffice :one
+-- name: TestGetDeletedAtOffice :one
 select deleted_at from offices where id = $1;
 
 -- name: TestCreateWorkplace :one
@@ -18,8 +18,11 @@ returning *;
 -- name: TestDeleteWorkplace :exec
 delete from workplaces where id = $1;
 
--- name: TestCheckDeletedWorkplace :one
+-- name: TestGetDeletedAtWorkplace :one
 select deleted_at from workplaces where id = $1;
+
+-- name: TestGetEmployee :one
+select * from employees where id = $1 and deleted_at is null;
 
 -- name: TestCreateEmployee :one
 insert into employees (name, workplace_id) values ($1, $2) returning *;
@@ -27,7 +30,7 @@ insert into employees (name, workplace_id) values ($1, $2) returning *;
 -- name: TestDeleteEmployee :exec
 delete from employees where id = $1;
 
--- name: TestCheckDeletedEmployee :one
+-- name: TestGetDeletedAtEmployee :one
 select deleted_at from employees where id = $1;
 
 -- name: TestCreateWorkEntry :one
@@ -38,7 +41,7 @@ returning *;
 -- name: TestDeleteWorkEntry :exec
 delete from work_entries where id = $1;
 
--- name: TestCheckDeletedWorkEntry :one
+-- name: TestGetDeletedAtWorkEntry :one
 select deleted_at from work_entries where id = $1;
 
 -- name: TestCreateUser :one

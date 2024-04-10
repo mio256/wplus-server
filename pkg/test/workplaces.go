@@ -40,10 +40,10 @@ func CreateWorkplace(t *testing.T, ctx context.Context, db rdb.DBTX, f func(v *r
 	return &created
 }
 
-func CheckDeletedWorkplace(t *testing.T, ctx context.Context, db rdb.DBTX, id int64) time.Time {
+func GetDeletedAtWorkplace(t *testing.T, ctx context.Context, db rdb.DBTX, id int64) time.Time {
 	t.Helper()
 
-	deletedAt, err := rdb.New(db).TestCheckDeletedWorkplace(ctx, id)
+	deletedAt, err := rdb.New(db).TestGetDeletedAtWorkplace(ctx, id)
 	require.NoError(t, err)
 	require.Equal(t, true, deletedAt.Valid)
 

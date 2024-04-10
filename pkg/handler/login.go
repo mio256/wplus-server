@@ -44,12 +44,6 @@ func PostLogin(c *gin.Context) {
 		return
 	}
 
-	token, err := util.GenerateToken(uint64(user.ID))
-	if err != nil {
-		c.Error(errors.Wrap(err))
-		return
-	}
-
 	var workplaceID int64
 	if user.EmployeeID.Valid {
 		employee, err := repo.GetEmployee(c, user.EmployeeID.Int64)
@@ -60,14 +54,22 @@ func PostLogin(c *gin.Context) {
 		workplaceID = employee.WorkplaceID
 	}
 
+	token, err := util.GenerateToken(util.UserClaims{
+		UserID:      uint64(user.ID),
+		OfficeID:    uint64(user.OfficeID),
+		WorkplaceID: uint64(workplaceID),
+		EmployeeID:  uint64(user.EmployeeID.Int64),
+		Name:        user.Name,
+		Role:        string(user.Role),
+	})
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
 	domain := os.Getenv("DOMAIN")
 	c.SetCookie("token", token, 3600, "/", domain, false, true)
 	c.JSON(http.StatusOK, gin.H{
-		"office_id":    user.OfficeID,
-		"user_id":      user.ID,
-		"employee_id":  user.EmployeeID,
-		"workplace_id": workplaceID,
-		"name":         user.Name,
-		"role":         user.Role,
+		"message": "success",
 	})
 }

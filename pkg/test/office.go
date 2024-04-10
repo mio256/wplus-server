@@ -32,10 +32,10 @@ func CreateOffice(t *testing.T, ctx context.Context, db rdb.DBTX, f func(v *rdb.
 	return &created
 }
 
-func CheckDeletedOffice(t *testing.T, ctx context.Context, db rdb.DBTX, id int64) time.Time {
+func GetDeletedAtOffice(t *testing.T, ctx context.Context, db rdb.DBTX, id int64) time.Time {
 	t.Helper()
 
-	deletedAt, err := rdb.New(db).TestCheckDeletedOffice(ctx, id)
+	deletedAt, err := rdb.New(db).TestGetDeletedAtOffice(ctx, id)
 	require.NoError(t, err)
 	require.Equal(t, true, deletedAt.Valid)
 

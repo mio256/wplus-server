@@ -8,39 +8,35 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mio256/wplus-server/pkg/infra/rdb"
+	"github.com/mio256/wplus-server/pkg/util"
 	"github.com/taxio/errors"
 )
 
-func GetWorkEntries(c *gin.Context) {
-	dbConn := c.MustGet("db").(rdb.DBTX)
-	repo := rdb.New(dbConn)
-
-	employeeID, err := strconv.ParseInt(c.Param("employee_id"), 10, 64)
-	if err != nil {
-		c.Error(errors.Wrap(err))
-		return
-	}
-
-	workEntries, err := repo.GetWorkEntriesByEmployee(c, employeeID)
-	if err != nil {
-		c.Error(errors.Wrap(err))
-		return
-	}
-
-	c.IndentedJSON(http.StatusOK, workEntries)
+type PostWorkEntryParams struct {
+	EmployeeID  int64  `json:"employee_id"`
+	WorkplaceID int64  `json:"workplace_id"`
+	Date        string `json:"date"`
+	Hours       int    `json:"hours"`
+	StartTime   string `json:"start_time"`
+	EndTime     string `json:"end_time"`
+	Attendance  bool   `json:"attendance"`
+	Comment     string `json:"comment"`
 }
 
 func GetWorkEntriesByOffice(c *gin.Context) {
 	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
-	officeID, err := strconv.ParseInt(c.Param("office_id"), 10, 64)
-	if err != nil {
-		c.Error(errors.Wrap(err))
+	user := c.MustGet("user").(*util.UserClaims)
+
+	if user.Role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "you are not admin",
+		})
 		return
 	}
 
-	workEntries, err := repo.GetWorkEntriesByOffice(c, officeID)
+	workEntries, err := repo.GetWorkEntriesByOffice(c, int64(user.OfficeID))
 	if err != nil {
 		c.Error(errors.Wrap(err))
 		return
@@ -53,9 +49,38 @@ func GetWorkEntriesByWorkplace(c *gin.Context) {
 	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
+	user := c.MustGet("user").(*util.UserClaims)
+
+	if user.Role != "admin" && user.Role != "manager" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "you are not admin or manager",
+		})
+		return
+	}
+
 	workplaceID, err := strconv.ParseInt(c.Param("workplace_id"), 10, 64)
 	if err != nil {
 		c.Error(errors.Wrap(err))
+		return
+	}
+	if user.Role == "manager" {
+		if workplaceID != int64(user.WorkplaceID) {
+			c.JSON(http.StatusForbidden, gin.H{
+				"message": "your workplace is different",
+			})
+			return
+		}
+	}
+
+	workplace, err := repo.GetWorkplace(c, workplaceID)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+	if workplace.OfficeID != int64(user.OfficeID) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "your office is different",
+		})
 		return
 	}
 
@@ -66,26 +91,148 @@ func GetWorkEntriesByWorkplace(c *gin.Context) {
 	}
 
 	c.IndentedJSON(http.StatusOK, workEntries)
+}
 
+func GetWorkEntries(c *gin.Context) {
+	dbConn := c.MustGet("db").(rdb.DBTX)
+	repo := rdb.New(dbConn)
+
+	user := c.MustGet("user").(*util.UserClaims)
+
+	employeeID, err := strconv.ParseInt(c.Param("employee_id"), 10, 64)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+	employee, err := repo.GetEmployee(c, employeeID)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	if user.Role == "admin" {
+		employeeOfficeID, err := repo.GetEmployeeOffice(c, employeeID)
+		if err != nil {
+			c.Error(errors.Wrap(err))
+			return
+		}
+		if employeeOfficeID != int64(user.OfficeID) {
+			c.JSON(http.StatusForbidden, gin.H{
+				"message": "your office is different",
+			})
+			return
+		}
+	} else if user.Role == "manager" {
+		if user.EmployeeID == 0 {
+			c.Error(errors.New("user is not manager: employee_id is not set"))
+			return
+		}
+		me, err := repo.GetEmployee(c, int64(user.EmployeeID))
+		if err != nil {
+			c.Error(errors.Wrap(err))
+			return
+		}
+		if employee.WorkplaceID != me.WorkplaceID {
+			c.JSON(http.StatusForbidden, gin.H{
+				"message": "your workplace is different",
+			})
+			return
+		}
+	} else if user.Role == "employee" {
+		if user.EmployeeID == 0 {
+			c.Error(errors.New("user is not employee: employee_id is not set"))
+			return
+		}
+		me, err := repo.GetEmployee(c, int64(user.EmployeeID))
+		if err != nil {
+			c.Error(errors.Wrap(err))
+			return
+		}
+		if employeeID != me.ID {
+			c.JSON(http.StatusForbidden, gin.H{
+				"message": "your employee is different",
+			})
+			return
+		}
+	}
+
+	workEntries, err := repo.GetWorkEntriesByEmployee(c, employeeID)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	c.IndentedJSON(http.StatusOK, workEntries)
 }
 
 func PostWorkEntry(c *gin.Context) {
 	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
-	var input struct {
-		EmployeeID  int64  `json:"employee_id"`
-		WorkplaceID int64  `json:"workplace_id"`
-		Date        string `json:"date"`
-		Hours       int    `json:"hours"`
-		StartTime   string `json:"start_time"`
-		EndTime     string `json:"end_time"`
-		Attendance  bool   `json:"attendance"`
-		Comment     string `json:"comment"`
-	}
+	user := c.MustGet("user").(*util.UserClaims)
+
+	var input PostWorkEntryParams
 	if err := c.BindJSON(&input); err != nil {
 		c.Error(errors.Wrap(err))
 		return
+	}
+
+	employee, err := repo.GetEmployee(c, input.EmployeeID)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+	if employee.WorkplaceID != input.WorkplaceID {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid input",
+		})
+		return
+	}
+
+	if user.Role == "admin" {
+		employeeOfficeID, err := repo.GetEmployeeOffice(c, employee.ID)
+		if err != nil {
+			c.Error(errors.Wrap(err))
+			return
+		}
+		if employeeOfficeID != int64(user.OfficeID) {
+			c.JSON(http.StatusForbidden, gin.H{
+				"message": "your office is different",
+			})
+			return
+		}
+	} else if user.Role == "manager" {
+		if user.EmployeeID == 0 {
+			c.Error(errors.New("user is not manager: employee_id is not set"))
+			return
+		}
+		me, err := repo.GetEmployee(c, int64(user.EmployeeID))
+		if err != nil {
+			c.Error(errors.Wrap(err))
+			return
+		}
+		if employee.WorkplaceID != me.WorkplaceID {
+			c.JSON(http.StatusForbidden, gin.H{
+				"message": "your workplace is different",
+			})
+			return
+		}
+	} else if user.Role == "employee" {
+		if user.EmployeeID == 0 {
+			c.Error(errors.New("user is not employee: employee_id is not set"))
+			return
+		}
+		me, err := repo.GetEmployee(c, int64(user.EmployeeID))
+		if err != nil {
+			c.Error(errors.Wrap(err))
+			return
+		}
+		if employee.ID != me.ID {
+			c.JSON(http.StatusForbidden, gin.H{
+				"message": "your employee is different",
+			})
+			return
+		}
 	}
 
 	var p rdb.CreateWorkEntryParams
@@ -167,11 +314,61 @@ func DeleteWorkEntry(c *gin.Context) {
 	dbConn := c.MustGet("db").(rdb.DBTX)
 	repo := rdb.New(dbConn)
 
+	user := c.MustGet("user").(*util.UserClaims)
+
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		c.Error(errors.Wrap(err))
 		return
 	}
+
+	workEntry, err := repo.GetWorkEntry(c, id)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+	employee, err := repo.GetEmployee(c, workEntry.EmployeeID)
+	if err != nil {
+		c.Error(errors.Wrap(err))
+		return
+	}
+
+	if user.Role == "admin" {
+		employeeOfficeID, err := repo.GetEmployeeOffice(c, employee.ID)
+		if err != nil {
+			c.Error(errors.Wrap(err))
+			return
+		}
+		if employeeOfficeID != int64(user.OfficeID) {
+			c.JSON(http.StatusForbidden, gin.H{
+				"message": "your office is different",
+			})
+			return
+		}
+	} else if user.Role == "manager" {
+		if user.EmployeeID == 0 {
+			c.Error(errors.New("user is not manager: employee_id is not set"))
+			return
+		}
+		if employee.WorkplaceID != int64(user.WorkplaceID) {
+			c.JSON(http.StatusForbidden, gin.H{
+				"message": "your workplace is different",
+			})
+			return
+		}
+	} else if user.Role == "employee" {
+		if user.EmployeeID == 0 {
+			c.Error(errors.New("user is not employee: employee_id is not set"))
+			return
+		}
+		if employee.ID != int64(user.EmployeeID) {
+			c.JSON(http.StatusForbidden, gin.H{
+				"message": "your employee is different",
+			})
+			return
+		}
+	}
+
 	if err := repo.SoftDeleteWorkEntry(c, id); err != nil {
 		c.Error(errors.Wrap(err))
 		return
