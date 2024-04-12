@@ -90,7 +90,7 @@ def post_work_entry(employee_id, workplace_id):
     elif workplace_type == 'attendance':
         work_entry_data['attendance'] = bool(input('attendance (y/n): ') == 'y')
 
-    r = requests.post(base_url + '/work_entries', headers=headers, json=work_entry_data)
+    r = requests.post(base_url + '/work_entries/', headers=headers, json=work_entry_data)
     return r.json()
 
 
