@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"context"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/mio256/wplus-server/pkg/handler"
@@ -15,8 +17,9 @@ const EmployeePath = "/employees/"
 const WorkEntryPath = "/work_entries/"
 
 func DBContext() gin.HandlerFunc {
+	ctx := context.Background()
+	dbConn := infra.ConnectDB(ctx)
 	return func(c *gin.Context) {
-		dbConn := infra.ConnectDB(c)
 		c.Set("db", dbConn)
 	}
 }
