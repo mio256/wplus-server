@@ -24,6 +24,12 @@ echo dotenv > .envrc
 make local-server
 ```
 
+## Deploy
+
+```sh
+gcloud builds submit --tag "tag_name"
+```
+
 ## Author
 
 [mio256](https://github.com/mio256)

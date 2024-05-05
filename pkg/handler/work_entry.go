@@ -244,7 +244,7 @@ func PostWorkEntry(c *gin.Context) {
 		c.Error(errors.Wrap(err))
 		return
 	}
-	date, err := time.Parse("2006-01-02T15:04:05.000Z", input.Date)
+	date, err := time.Parse("2006-01-02T15:04:05.000+09:00", input.Date)
 	if err != nil {
 		c.Error(errors.Wrap(err))
 		return
