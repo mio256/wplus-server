@@ -397,7 +397,7 @@ func TestPostWorkEntry(t *testing.T) {
 			p := handler.PostWorkEntryParams{
 				EmployeeID:  e.ID,
 				WorkplaceID: wp.ID,
-				Date:        "2006-01-02T00:00:00.000Z",
+				Date:        "2006-01-02T00:00:00.000+09:00",
 				Hours:       tt.Hours,
 				StartTime:   tt.StartTime,
 				EndTime:     tt.EndTime,
@@ -425,7 +425,7 @@ func TestPostWorkEntry(t *testing.T) {
 				require.NoError(t, json.Unmarshal(w.Body.Bytes(), &res))
 				require.Equal(t, p.EmployeeID, res.EmployeeID)
 				require.Equal(t, p.WorkplaceID, res.WorkplaceID)
-				require.Equal(t, p.Date, res.Date.Time.Format("2006-01-02T15:04:05.000Z"))
+				require.Equal(t, p.Date, res.Date.Time.Format("2006-01-02T15:04:05.000+09:00"))
 				if res.Hours.Valid {
 					require.Equal(t, p.Hours, int(res.Hours.Int16))
 				} else if res.Attendance.Valid {
