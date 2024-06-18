@@ -12,13 +12,24 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-insert into users (id, office_id, name, password, role, employee_id)
-VALUES ($1, $2, $3, $4, $5, $6)
-returning id, office_id, name, password, role, employee_id, created_at, updated_at
+WITH MaxId AS (
+    SELECT COALESCE(MAX(id), 0) AS max_id
+    FROM users
+    WHERE office_id = $1
+),
+NewId AS (
+    SELECT max_id + 1 AS new_id
+    FROM MaxId
+)
+INSERT INTO users (id, office_id, name, password, role, employee_id)
+VALUES (
+    (SELECT new_id FROM NewId),
+    $1, $2, $3, $4, $5
+)
+RETURNING id, office_id, name, password, role, employee_id, created_at, updated_at
 `
 
 type CreateUserParams struct {
-	ID         int64       `json:"id"`
 	OfficeID   int64       `json:"office_id"`
 	Name       string      `json:"name"`
 	Password   string      `json:"password"`
@@ -28,7 +39,6 @@ type CreateUserParams struct {
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, createUser,
-		arg.ID,
 		arg.OfficeID,
 		arg.Name,
 		arg.Password,
