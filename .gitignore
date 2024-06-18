@@ -1,2 +1,7 @@
+# go binaries
 /bin/
+
+# env
 .gcloud
+.env
+.envrc
