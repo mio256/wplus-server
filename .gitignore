@@ -5,3 +5,6 @@
 .gcloud
 .env
 .envrc
+
+# MacOS
+.DS_Store
