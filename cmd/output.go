@@ -41,15 +41,23 @@ func outputElsxCmd(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "xlsx",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+			dbConn := infra.ConnectDB(ctx)
+			defer dbConn.Close()
+			tx, err := dbConn.Begin(ctx)
+			if err != nil {
+				return errors.Wrap(err)
+			}
+			defer util.DeferRollback(ctx, tx)
+			repo := rdb.New(tx)
+
 			if len(args) != 2 {
 				return errors.New("invalid args: <workplace_id> <yyyy/mm>")
 			}
-
 			id, err := strconv.ParseUint(args[0], 10, 64)
 			if err != nil {
 				return errors.Wrap(err)
 			}
-
 			// HACK: ここで年月を分割しているが、本来は正規表現でチェックするべき
 			year, err := strconv.Atoi(args[1][:4])
 			if err != nil {
@@ -59,19 +67,6 @@ func outputElsxCmd(ctx context.Context) *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err)
 			}
-
-			ctx := cmd.Context()
-
-			dbConn := infra.ConnectDB(ctx)
-			defer dbConn.Close()
-
-			tx, err := dbConn.Begin(ctx)
-			if err != nil {
-				return errors.Wrap(err)
-			}
-			defer util.DeferRollback(ctx, tx)
-
-			repo := rdb.New(tx)
 
 			f, err := excelize.OpenFile(TEMPLATE)
 			if err != nil {
@@ -85,6 +80,13 @@ func outputElsxCmd(ctx context.Context) *cobra.Command {
 					log.Fatal(err)
 				}
 			}()
+
+			if err := f.SetCellValue(SHEET, "C4", year); err != nil {
+				return errors.Wrap(err)
+			}
+			if err := f.SetCellValue(SHEET, "E4", month); err != nil {
+				return errors.Wrap(err)
+			}
 
 			entries, err := repo.OutputWorkEntriesByWorkplaceAndDate(ctx, rdb.OutputWorkEntriesByWorkplaceAndDateParams{
 				ID: int64(id),
@@ -114,8 +116,7 @@ func outputElsxCmd(ctx context.Context) *cobra.Command {
 				})
 			}
 
-			err = f.SetCellValue(SHEET, "E4", month)
-			if err != nil {
+			if err = f.SetCellValue(SHEET, "E4", month); err != nil {
 				return err
 			}
 
@@ -153,8 +154,7 @@ func outputElsxCmd(ctx context.Context) *cobra.Command {
 						}
 					}
 
-					err = f.SetCellValue(SHEET, hourCell, entry.Hours+uint(hourValue))
-					if err != nil {
+					if err = f.SetCellValue(SHEET, hourCell, entry.Hours+uint(hourValue)); err != nil {
 						return err
 					}
 				}
