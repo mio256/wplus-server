@@ -1,6 +1,6 @@
 module github.com/mio256/wplus-server
 
-go 1.21.6
+go 1.22
 
 require (
 	github.com/gin-contrib/cors v1.7.0
@@ -14,6 +14,7 @@ require (
 	github.com/sqldef/sqldef v0.16.15
 	github.com/stretchr/testify v1.8.4
 	github.com/taxio/errors v0.3.0
+	github.com/xuri/excelize/v2 v2.8.1
 	golang.org/x/crypto v0.21.0
 	golang.org/x/text v0.14.0
 )
@@ -51,7 +52,6 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	github.com/xuri/efp v0.0.0-20231025114914-d1ff6096ae53 // indirect
-	github.com/xuri/excelize/v2 v2.8.1 // indirect
 	github.com/xuri/nfp v0.0.0-20230919160717-d98342af3f05 // indirect
 	golang.org/x/arch v0.7.0 // indirect
 	golang.org/x/net v0.22.0 // indirect
