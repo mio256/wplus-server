@@ -16,6 +16,7 @@ const WorkplacePath = "/workplaces/"
 const EmployeePath = "/employees/"
 const WorkEntryPath = "/work_entries/"
 const UserPath = "/users/"
+const OutputPath = "/output/"
 
 func DBContext() gin.HandlerFunc {
 	ctx := context.Background()
@@ -86,6 +87,8 @@ func SetupRouter() *gin.Engine {
 	p.DELETE(WorkEntryPath+":id/", handler.DeleteWorkEntry)
 	// user
 	p.POST(UserPath, handler.PostUserAndEmployee)
+	// output
+	p.POST(OutputPath+"workplace/:workplace_id/", handler.GetOutputByWorkplace)
 
 	return r
 }

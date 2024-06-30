@@ -71,6 +71,10 @@ func createCmd(ctx context.Context) *cobra.Command {
 
 			var users []*rdb.User
 			for i := 0; i < 3; i++ {
+				hash, err := util.GeneratePasswordHash("password")
+				if err != nil {
+					return errors.Wrap(err)
+				}
 				u, err := repo.CreateUser(ctx, rdb.CreateUserParams{
 					OfficeID: o.ID,
 					EmployeeID: pgtype.Int8{
@@ -78,7 +82,7 @@ func createCmd(ctx context.Context) *cobra.Command {
 						Valid: true,
 					},
 					Role:     rdb.UserTypeEmployee,
-					Password: "password",
+					Password: hash,
 				})
 				if err != nil {
 					return errors.Wrap(err)
